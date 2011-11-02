@@ -1,0 +1,21 @@
+{
+  "author": "Jerome Gravel-Niquet <jeromegn@gmail.com> (http://jgn.me)",
+  "name": "poutine",
+  "description": "MongoDB ORM",
+  "version": "0.0.1",
+  "repository": {
+    "url": ""
+  },
+  "engines": {
+    "node": "~v0.4.5"
+  },
+  "dependencies": {
+    "mongodb" : "*",
+    "sugar"   : "*"
+  },
+  "devDependencies": {
+    "coffee-script" : "*",
+    "vows"          : "*"
+  },
+  "main": "./lib"
+}
