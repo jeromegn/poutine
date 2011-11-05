@@ -15,7 +15,8 @@
   },
   "devDependencies": {
     "coffee-script" : "*",
-    "vows"          : "*"
+    "vows"          : "*",
+    "async"         : "*"
   },
   "main": "./lib"
 }

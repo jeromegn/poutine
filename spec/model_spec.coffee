@@ -1,16 +1,21 @@
-# testCase = require("nodeunit").testCase
-vows = require "vows"
-assert = require "assert"
-Poutine = require "../src"
+vows = require("vows")
+assert = require("assert")
+{Poutine} = require("./helpers")
 
-Poutine.connection.url = "mongodb://localhost:27017/poutine-test"
+random = -> Math.random().toString().substr(3)
 
+# Fields and collection_name gotta be set topmost
+# before the extend and include methods are called
 class User extends Poutine.Model
-  fields :
-    name  : String
-    email : String 
+  collection_name: "users_#{random()}"
+  fields:
+    name: String
+    email: String
 
-User.index 'email', unique: true
+  @extend Poutine.Collection
+  @include Poutine.Document
+
+  @index 'email', unique: true
 
 vows.describe("Model").addBatch(
   
@@ -45,6 +50,7 @@ vows.describe("Model").addBatch(
             assert.isNull err
           
           "should return the same instance": (err, user, savedUser) ->
+            console.log arguments
             assert.equal user._id.toString(), savedUser._id.toString()
         
         "and then deleting it":
@@ -66,11 +72,6 @@ vows.describe("Model").addBatch(
             
             "should not find any record": (err, user) ->
               assert.isNull user
-    
-    teardown: ->
-      console.log "TEARING DOWN"
-      Poutine.connection.database.dropDatabase (err) ->
-        if (err) then console.log err
-        Poutine.connection.database.close()
+
 
 ).export(module)
