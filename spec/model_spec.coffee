@@ -18,60 +18,55 @@ class User extends Poutine.Model
   @index 'email', unique: true
 
 vows.describe("Model").addBatch(
-  
-  "once a connection is established":
-    topic: ->
-      Poutine.connect this.callback
-      return
 
-    "creating a new model instance":
-      topic: new User(name: "Jerome", email: "test@test.com")
+  "a new model instance":
+    topic: new User(name: "Jerome", email: "test@test.com")
 
-      "should have populated fields": (user)->
-        assert.equal user.name, "Jerome"
+    "should have populated fields": (user)->
+      assert.equal user.name, "Jerome"
+
+    "should be marked as a new record (unsaved)": (user) ->
+      assert.equal user.isNewRecord(), true
   
-      "should not exist in the database": (user) ->
-        assert.equal user.isNewRecord(), true
+    "saving an instance":
+      topic: (user) ->
+        user.save this.callback
+        return
+      "should exist in the database": (user)->
+        assert.equal user.isNewRecord(), false
     
-      "saving an instance":
-        topic: (user) ->
-          user.save this.callback
+      "and then searching for it with its _id":
+        topic: (savedUser)->
+          User.find(_id: savedUser._id).one (err, user) =>
+            this.callback(err, user, savedUser)
           return
-        "should exist in the database": (user)->
-          assert.equal user.isNewRecord(), false
-      
-        "and then searching for it with its _id":
-          topic: (savedUser)->
-            User.find savedUser._id, (err, user) =>
-              this.callback(err, user, savedUser)
-            return
-          
-          "should not err": (err, user)->
-            assert.isNull err
-          
-          "should return the same instance": (err, user, savedUser) ->
-            console.log arguments
-            assert.equal user._id.toString(), savedUser._id.toString()
         
-        "and then deleting it":
-          topic: (err, user) ->
-            user.remove (err) =>
-              this.callback err, user
+        "should not err": (err, user)->
+          assert.isNull err
+        
+        "should return the same instance": (err, user, savedUser) ->
+          assert.equal user._id.toString(), savedUser._id.toString()
+          assert.instanceOf user, User
+      
+      "and then deleting it":
+        topic: (err, user) ->
+          user.remove (err) =>
+            this.callback err, user
+          return
+        
+        "should not err": (err, oldUser) ->
+          assert.isNull err
+        
+        "and then searching for it in vain":
+          topic: (err, oldUser) ->
+            User.find oldUser._id, this.callback
             return
           
-          "should not err": (err, oldUser) ->
+          "should not err": (err, user) ->
             assert.isNull err
           
-          "and then searching for it in vain":
-            topic: (err, oldUser) ->
-              User.find oldUser._id, this.callback
-              return
-            
-            "should not err": (err, user) ->
-              assert.isNull err
-            
-            "should not find any record": (err, user) ->
-              assert.isNull user
+          "should not find any record": (err, user) ->
+            assert.isNull user
 
 
 ).export(module)

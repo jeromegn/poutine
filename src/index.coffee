@@ -2,6 +2,8 @@ require "sugar"
 Mongo = require "mongodb"
 ObjectID = Mongo.pure().ObjectID
 
+Async = require "async"
+
 connection = require "./connection"
 
 utils = require "./utils"
@@ -15,6 +17,59 @@ Poutine.connection = connection
 Poutine.collections = {}
 
 reservedKeywords = ["extended", "included"]
+
+finder = (query = {}, options = {})->
+  if Object.isString(query) || query instanceof ObjectID
+    callback = options
+    query = new ObjectID(query) unless query instanceof ObjectID
+    this.connect (err, collection)=>
+      return callback err if err
+      collection.findOne query, options, (err, record) ->
+        return callback err if err
+        callback null, record && new this().load(record)
+  else
+    iterator =
+      each: (callback)=>
+        this.connect (err, collection)=>
+          return callback err if err
+          collection.find(query, options).each (err, record) =>
+            return callback err if err
+            callback null, record && new this().load(record)
+      all: (callback)=>
+        this.connect (err, collection)=>
+          return callback err if err
+          collection.find(query, options).toArray (err, records) =>
+            return callback err if err
+            callback null, records.map((record)=> new this().load(record))
+      one: (callback)=>
+        this.connect (err, collection)=>
+          return callback err if err
+          collection.findOne query, options, (err, record) =>
+            return callback err if err
+            callback null, record && new this().load(record)
+      count: (callback)=>
+        this.connect (err, collection)=>
+          return callback err if err
+          collection.find(query, options).count (err, count) =>
+            return callback err if err
+            callback null, count
+      stream: =>
+        events = new EventEmitter
+        this.connect (err, collection)=>
+          return events.emit "error", err if err
+          collection.find query, options, (err, cursor) =>
+            return events.emit "error", err if err
+            next =
+              cursor.nextObject (err, item)->
+                return events.emit "error", err if err
+                if item
+                  events.emit "data", item
+                  process.nextTick next
+                else
+                  events.emit "done"
+            next()
+        return events
+    return iterator
 
 Poutine.Collection =
   # Once extended
@@ -41,11 +96,14 @@ Poutine.Collection =
       else
         callback null, new Mongo.Collection(database, name)
 
-  index: (fields, options = {})->
+  index: (fields, options, callback)->
+    options ||= {}
+    callback ||= (err, index) ->
+      process.emit "error", err if err
     this.connect (err, collection)->
       process.emit "error", err if err
-      collection.ensureIndex fields, options, (err)->
-        process.emit "error", err if err
+      console.log "Ensuring indexes in the collection #{collection.collectionName}"
+      collection.ensureIndex fields, options, callback
 
   create: (fields, callback)->
     object = new this(fields)
@@ -56,58 +114,8 @@ Poutine.Collection =
   # Model.find().all (err, records)->
   # Model.find(query).one (err, record)->
   # Model.find(query, options).each (err, record)->
-  find: (query = {}, options = {})->
-    if Object.isString(query) || query instanceof ObjectID
-      callback = options
-      query = new ObjectID(query) unless query instanceof ObjectID
-      this.connect (err, collection)=>
-        return callback err if err
-        collection.findOne query, options, (err, record) ->
-          return callback err if err
-          callback null, record && new this().load(record)
-    else
-      iterator =
-        each: (callback)->
-          this.connect (err, collection)=>
-            return callback err if err
-            collection.find(query, options).each (err, record) =>
-              return callback err if err
-              callback null, record && new this().load(record)
-        all: (callback)->
-          this.connect (err, collection)=>
-            return callback err if err
-            collection.find(query, options).toArray (err, records) =>
-              return callback err if err
-              callback null, records.map((record)-> new this().load(record))
-        one: (callback)->
-          this.connect (err, collection)=>
-            return callback err if err
-            collection.findOne query, options, (err, record) =>
-              return callback err if err
-              callback null, record && new this().load(record)
-        count: (callback)->
-          this.connect (err, collection)=>
-            return callback err if err
-            collection.find(query, options).count (err, count) =>
-              return callback err if err
-              callback null, count
-        stream: ->
-          events = new EventEmitter
-          this.connect (err, collection)=>
-            return events.emit "error", err if err
-            collection.find query, options, (err, cursor) =>
-              return events.emit "error", err if err
-              next =
-                cursor.nextObject (err, item)->
-                  return events.emit "error", err if err
-                  if item
-                    events.emit "data", item
-                    process.nextTick next
-                  else
-                    events.emit "done"
-              next()
-          return events
-      return iterator
+  find: ->
+    finder.apply this, arguments
 
   remove: (query, options, callback)->
     [callback, options] = [options, {}] unless callback
@@ -117,7 +125,6 @@ Poutine.Collection =
       collection.remove query, options, callback
 
   hasMany: (collection) ->
-    this.prototype[collection] = ""
     this.relations.push
       type: "hasMany"
       parent: this
@@ -136,10 +143,8 @@ Poutine.Document =
   save: (options, callback)->
     [callback, options] = [options, {}] unless callback
     if this.isNewRecord()
-      console.log "NEW RECORD"
       this.create options, callback
     else
-      console.log "EXISTING"
       this.update options, callback
 
   isNewRecord: ->
@@ -205,12 +210,17 @@ Poutine.Document =
 class Poutine.Model
   constructor: (values)->
     Object.merge this, values
+    # Don't enumerate _existing
+    Object.defineProperty this, '_existing', {writable: true}
     this.setupRelations()
   
   setupRelations: ->
     this.constructor.relations.forEach (relation) =>
       if relation.type == "hasMany"
-        this[relation.child] = new Proxy.HasMany(this, relation.parent, relation.child)
+        Object.defineProperty this, relation.child, {
+          get: -> new Proxy.HasMany(this, relation.parent, relation.child)
+        }
+        #this[relation.child] = new Proxy.HasMany(this, relation.parent, relation.child)
 
   @extend: (obj) ->
     for key, value of obj when key not in reservedKeywords
@@ -249,20 +259,64 @@ class Proxy
 class Proxy.HasMany extends Proxy
   constructor: (doc, parentModel, childModel) ->
     super(doc, parentModel, childModel)
-
-  create: (fields, callback) ->
     @field ||= @childModel().prototype.collection_name + "_ids"
     @remoteField ||= @doc.constructor.name.toLowerCase() + "_id"
     @childModel().prototype.fields[@remoteField] ||= Array
     @doc.constructor.prototype.fields[@field] ||= ObjectID
-    fields[@remoteField] = @doc._id
+
+    #@childModel().index @remoteField
+    #@doc.constructor.index @field
+
     @doc[@field] ||= []
+
+  create: (fields, callback) ->
+    fields[@remoteField] = @doc._id
+
     super fields, (err, child)=>
       return callback(err) if err
       @doc[@field].push child._id
       @doc.save (err)=>
         return callback(err) if err
         callback(null, child)
+  
+  push: (model, callback) ->
+    oid = ""
+    if Object.isString(model)
+      oid = new ObjectID(model)
+      model = false
+    else if model instanceof ObjectID
+      oid = model
+      model = false
+    else
+      oid = model._id
+    
+    @doc[@field].push oid
+
+    saveAll = (child) =>
+      Async.parallel {
+        parent: (cb) =>
+          @doc.save cb
+        child: (cb) =>
+          child.save cb
+      }, (err, models) =>
+        return callback(err) if err
+        callback(null, models.parent, models.child)
+
+    if model
+      model[@remoteField] = @doc._id
+      saveAll(model)
+    else
+      @childModel().find(_id: oid).one (err, child) =>
+        return callback(err) if err
+        return callback(new Error("No record found with #{oid}")) if !child
+        child[@remoteField] = @doc._id
+        saveAll(child)
+  
+  find: (query = {}, options = {})->
+    query[@remoteField] = @doc._id
+    finder.call @childModel(), query, options
+
+
 
 Poutine.Proxy = Proxy
 

@@ -11,12 +11,12 @@
   },
   "dependencies": {
     "mongodb" : "*",
-    "sugar"   : "*"
+    "sugar"   : "*",
+    "async"   : "*"
   },
   "devDependencies": {
     "coffee-script" : "*",
-    "vows"          : "*",
-    "async"         : "*"
+    "vows"          : "*"
   },
   "main": "./lib"
 }
