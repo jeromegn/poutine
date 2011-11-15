@@ -1,4 +1,5 @@
 { Database, Configuration } = require("./database")
+MongoDB = require("mongodb")
 
 # Database configurations.  We use this to configure database access and then
 # get the driver instance (Db object).

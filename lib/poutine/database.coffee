@@ -2,13 +2,18 @@
 { Db, Server } = require("mongodb")
 { EventEmitter } = require("events")
 { Pool } = require("generic-pool")
+# Cleanup on weak references. Optional for now because I don't know how well the
+# node-weak works for other people.
+try
+  weak = require("weak")
+catch ex
 
 
 # Database configuration.  This is basically a wrapped around the Mongodb
 # driver, specifically it's Db object.
 class Configuration
   constructor: (name, options = {})->
-    @pool = new Pool
+    @_pool = new Pool
       name:     name
       create:   (callback)=>
         server = new Server(options.host || "127.0.0.1", options.port || 27017)
@@ -21,11 +26,11 @@ class Configuration
 
   # Acquire new connection.
   acquire: (callback)->
-    @pool.acquire callback
+    @_pool.acquire callback
 
   # Releases open connection.
   release: (connection)->
-    @pool.release connection
+    @_pool.release connection
 
 
 
@@ -34,13 +39,16 @@ class Configuration
 #
 # Phytical connections are lazily initialized and pooled.
 class Database extends EventEmitter
-  constructor: (@configuration)->
-    @client = @configuration.client
-    @collections = []
+  constructor: (@_configuration)->
+    @_collections = []
     @ObjectID = require("mongodb").BSONPure.ObjectID
     # Tracks how many times we called begin, only release TCP connection
     # when zero.
     @_lock = 0
+    if weak
+      weak this, ->
+        if @_connecting
+          @_configuration.release @_connection
 
   # Various methods will open the connection on first use, so there's no need
   # for you to call this method.  Remember to call end() afterwards.
@@ -51,7 +59,7 @@ class Database extends EventEmitter
     if @_connection
       @_lock += 1
       process.nextTick =>
-        callback null, @connection
+        callback null, @_connection
     else
       this.once "connected", (connection)->
         callback null, connection
@@ -60,12 +68,12 @@ class Database extends EventEmitter
         # Pool looks at argument count, so we can't use => here.
         self = this
         self._connecting = true
-        @configuration.acquire (error, connection)->
+        @_configuration.acquire (error, connection)->
           self._connecting = false
           if error
             self.emit "error", error
           else
-            self.connection = connection
+            self._connection = connection
             self._lock += self.listeners("connected").length
             self.emit "connected", connection
     return
@@ -105,9 +113,9 @@ class Database extends EventEmitter
   # also call `end` before passing control back.
   end: ->
     @_lock -= 1 if @_lock > 0
-    if @_lock == 0 && @connection
-      @configuration.release @connection
-      @connection = null
+    if @_lock == 0 && @_connection
+      @_configuration.release @_connection
+      delete @_connection
 
   # Returns the named collection.
   collection: (name)->
@@ -116,7 +124,7 @@ class Database extends EventEmitter
       name = model.collection
       unless name
         throw new Error("No #{model.constructor}.collection, can't determine collection name")
-    @collections[name] ||= new Collection(name, this, model)
+    @_collections[name] ||= new Collection(name, this, model)
 
   # Finds all objects that match the query selector.
   #
@@ -143,7 +151,7 @@ class Database extends EventEmitter
   #    query.all (err, posts, db)->
   #      . . .
   find: (name, selector, options, callback)->
-    return this.collection(name).find(selector, options, callback)
+    return @collection(name).find(selector, options, callback)
 
   # Counts unique objects based on query selector, and passes error, count and
   # connection to callback.
@@ -155,7 +163,7 @@ class Database extends EventEmitter
   #   mongo().count "posts", author_id: author._id, (err, count, db)->
   #     . . .
   count: (name, selector, callback)->
-    this.collection(name).count selector, callback
+    @collection(name).count selector, callback
 
   # Finds distinct values  based on query selector, and passes error, values and
   # connection to callback.
@@ -167,7 +175,7 @@ class Database extends EventEmitter
   #   mongo().distinct "posts", "author_id", (err, author_ids, db)->
   #     . . .
   distinct: (name, key, selector, callback)->
-    this.collection(name).distinct key, selector, callback
+    @collection(name).distinct key, selector, callback
 
 
 exports.Configuration = Configuration
