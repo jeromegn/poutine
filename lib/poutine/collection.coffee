@@ -1,7 +1,7 @@
 # Represents a collection and all the operation you can do on one.  Database
 # methods like find and insert operate through a collection.
 class Collection
-  constructor: (@name, @_database, @model)->
+  constructor: (@name, @database, @model)->
 
   # -- Finders --
 
@@ -35,16 +35,16 @@ class Collection
       [callback, options] = [options, null]
     if !callback && !options && selector instanceof Function
       [callback, selector] = [selector, null]
-    if selector instanceof @_database.ObjectID || selector instanceof String
+    if selector instanceof @database.ObjectID || selector instanceof String
       if callback
-        this.one selector, options, callback
+        @one selector, options, callback
       else
-        return this.where(_id: selector).extend(options)
+        return @where(_id: selector).extend(options)
     else
       if callback
-        this.all selector, options, callback
+        @all selector, options, callback
       else
-        return this.where(selector).extend(options)
+        return @where(selector).extend(options)
 
   # Passes matching object from this query to callback.
   #
@@ -114,12 +114,12 @@ class Collection
         [callback, selector] = [selector, null]
     throw new Error("Callback required") unless callback instanceof Function
     objects = []
-    this.each selector, options, (error, object)=>
+    @each selector, options, (error, object)=>
       return callback error if error
       if object
         objects.push object
       else
-        callback null, objects, @_database
+        callback null, objects, @database
 
   # Passes number of records in this query to callback.
   #
@@ -166,14 +166,14 @@ class Collection
 
   # Passes error, collection and database to callback.
   _connect: (callback)->
-    @_database.driver (error, connection, end)=>
+    @database.driver (error, connection, end)=>
       return callback error if error
       connection.collection @name, (error, collection)=>
         if error
           end()
           callback error
         else
-          callback null, collection, @_database
+          callback null, collection, @database
 
   # Used internally to open a cursor for queries.
   _query: (selector, options, callback)->
@@ -211,7 +211,7 @@ class Collection
 #     titles = (post.title for post in posts)
 #     console.log "Found these posts:", titles
 class Scope
-  constructor: (@_collection, @_selector, @_options)->
+  constructor: (@collection, @selector, @options)->
 
   # -- Refine selector/options --
 
@@ -222,11 +222,11 @@ class Scope
   #   connect().find("posts").where(author_id: author._id)
   where: (selector)->
     combined = {}
-    if @_selector
-      combined[k] = v for k, v of @_selector
+    if @selector
+      combined[k] = v for k, v of @selector
     if selector
       combined[k] = v for k, v of selector
-    return new Scope(@_collection, combined, @_options)
+    return new Scope(@collection, combined, @options)
 
   # Instructs query to return only named fields.  You can call with multiple
   # arguments, an array argument or no arguments if you're only interested in
@@ -279,16 +279,16 @@ class Scope
   # Returns a scope with combined options.
   extend: (options)->
     combined = {}
-    if @_options
-      combined[k] = v for k,v of @_options
+    if @options
+      combined[k] = v for k,v of @options
     if options
       combined[k] = v for k,v of options
-    return new Scope(@_collection, @_selector, combined)
+    return new Scope(@collection, @selector, combined)
 
   # Changes sorting order.
   sort: (fields, dir)->
     throw "Direction must be 1 (asc) or -1 (desc)" unless dir == 1 || dir == -1
-    sort = @_options.sort || []
+    sort = @options.sort || []
     for field in fields
       if Array.isArray(field)
         sort = sort.concat([f, dir] for f in field)
@@ -305,7 +305,7 @@ class Scope
   #   connect().find("posts", author_id: id).one (err, post, db)->
   one: (callback)->
     throw new Error("Callback required") unless callback instanceof Function
-    @_collection.one @_selector, @_options, callback
+    @collection.one @selector, @options, callback
 
   # Passes each object to callback.  Passes null as last object.
   #
@@ -313,7 +313,7 @@ class Scope
   #   connect().find("posts").each (err, post, db)->
   each: (callback)->
     throw new Error("Callback required") unless callback instanceof Function
-    @_collection.each @_selector, @_options, callback
+    @collection.each @selector, @options, callback
 
   # Passes all objects to callback.
   #
@@ -321,21 +321,21 @@ class Scope
   #   connect().find("posts").all (err, posts)->
   all: (callback)->
     throw new Error("Callback required") unless callback instanceof Function
-    @_collection.all @_selector, @_options, callback
+    @collection.all @selector, @options, callback
 
   # Passes number of records in this query to callback.
   #
   # Example:
   #   connect().find("posts", author_id: id).count (err, count)->
   count: (callback)->
-    @_collection.count @_selector, callback
+    @collection.count @selector, callback
 
   # Passes distinct values callback.
   #
   # Example:
   #   connect().find("posts").distinct "author_id", (err, author_ids)->
   distinct: (key, callback)->
-    @_collection.distinct key, @_selector, callback
+    @collection.distinct key, @selector, callback
 
 
   # -- Transformation --
@@ -353,7 +353,7 @@ class Scope
       fn = (object)-> object[name]
     throw new Error("Callback required") unless callback instanceof Function
     results = []
-    @_collection.each @_selector, @_options, (error, object)->
+    @collection.each @selector, @options, (error, object)->
       return callback error if error
       if object
         try
@@ -377,7 +377,7 @@ class Scope
       fn = (object)-> object[name]
     throw new Error("Callback required") unless callback instanceof Function
     results = []
-    @_collection.each @_selector, @_options, (error, object)->
+    @collection.each @selector, @options, (error, object)->
       return callback error if error
       if object
         try
@@ -403,7 +403,7 @@ class Scope
     if arguments.length < 3
       [value, fn, callback] = [null, value, fn]
     throw new Error("Callback required") unless callback instanceof Function
-    @_collection.each @_selector, @_options, (error, object)->
+    @collection.each @selector, @options, (error, object)->
       return callback error if error
       if object
         try
@@ -423,7 +423,7 @@ class Scope
       @_cursor.nextObject (error, object)->
         callback error, object
     else
-      @_collection._query @_selector, @_options, (error, @_cursor)=>
+      @collection._query @selector, @options, (error, @_cursor)=>
         return callback error if error
         @_cursor.nextObject callback
     return
@@ -438,9 +438,6 @@ class Scope
     if @_cursor
       @_cursor.close()
     return
-
-
-
 
 
 exports.Collection = Collection
