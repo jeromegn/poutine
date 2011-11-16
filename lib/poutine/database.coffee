@@ -50,19 +50,21 @@ class Database extends EventEmitter
         if @_connecting
           @_configuration.release @_connection
 
-  # Various methods will open the connection on first use, so there's no need
-  # for you to call this method.  Remember to call end() afterwards.
-  open: (callback)->
+  # Use this if you need access to the MongoDB driver's connection object.  It
+  # passes, error, a connection and a reference to the end method.  Don't forget
+  # to call the end function once done with the connection.
+  driver: (callback)->
     throw new Error("Callback required") unless callback
+    end = @end.bind(this)
     # This is the TCP connection, which we use until it's returned to
     # the pool (see end method).
-    if @_connection
+    if connection = @_connection
       @_lock += 1
-      process.nextTick =>
-        callback null, @_connection
+      process.nextTick ->
+        callback null, connection, end
     else
       this.once "connected", (connection)->
-        callback null, connection
+        callback null, connection, end
       this.once "error", callback
       unless @_connecting
         # Pool looks at argument count, so we can't use => here.

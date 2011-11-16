@@ -64,11 +64,11 @@ class Collection
 
   # Passes error, collection and database to callback.
   _connect: (callback)->
-    @database.open (error, connection)=>
+    @database.driver (error, connection, end)=>
       return callback error if error
       connection.collection @name, (error, collection)=>
         if error
-          @database.end()
+          end()
           callback error
         else
           callback null, collection, @database
