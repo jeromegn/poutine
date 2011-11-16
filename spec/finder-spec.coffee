@@ -13,9 +13,9 @@ vows.describe("Queries").addBatch
     topic: ->
       fixtures =
         posts: [
-          { title: "Test 1", author_id: 1, category: "low", created_at: new Date },
-          { title: "Test 2", author_id: 1, category: "high", created_at: new Date },
-          { title: "Test 3", author_id: 2, category: "low", created_at: new Date }
+          { title: "Post 1", author_id: 1, category: "low", created_at: new Date },
+          { title: "Post 2", author_id: 1, category: "high", created_at: new Date },
+          { title: "Post 3", author_id: 2, category: "low", created_at: new Date }
         ]
       setup fixtures, @callback
 
@@ -35,7 +35,7 @@ vows.describe("Queries").addBatch
               assert.equal post.author_id, 1
           "should return all posts in order": (posts)->
             title = (post.title for post in posts)
-            assert.deepEqual title, ["Test 2", "Test 1"]
+            assert.deepEqual title, ["Post 2", "Post 1"]
         "query and callback":
           topic: ->
             connect().find "posts", author_id: 1, @callback
@@ -59,7 +59,7 @@ vows.describe("Queries").addBatch
               assert.equal post.author_id, 1
           "should return all posts in order": (posts)->
             title = (post.title for post in posts)
-            assert.deepEqual title, ["Test 2", "Test 1"]
+            assert.deepEqual title, ["Post 2", "Post 1"]
         "query only":
           topic: ->
             scope = connect().find("posts", author_id: 1)
@@ -83,7 +83,7 @@ vows.describe("Queries").addBatch
             assert.equal posts.length, 3
           "should return all posts in order": (posts)->
             title = (post.title for post in posts)
-            assert.deepEqual title, ["Test 3", "Test 2", "Test 1"]
+            assert.deepEqual title, ["Post 3", "Post 2", "Post 1"]
         "IDs and callback":
           topic: ->
             connect().distinct "posts", "_id", (err, ids, db)=>
@@ -104,7 +104,7 @@ vows.describe("Queries").addBatch
               id = (post._id for post in posts)[0]
               connect().find "posts", id, fields: ["title"], @callback
           "should return a single post": (post)->
-            assert.equal post.title, "Test 1"
+            assert.equal post.title, "Post 1"
           "should return specified fields": (post)->
             assert.isUndefined post.author_id
         "ID and callback":
@@ -113,7 +113,7 @@ vows.describe("Queries").addBatch
               id = (post._id for post in posts)[0]
               connect().find "posts", id, @callback
           "should return a single post": (post)->
-            assert.equal post.title, "Test 1"
+            assert.equal post.title, "Post 1"
         "ID and options":
           topic: ->
             connect().find "posts", (err, posts, db)=>
@@ -121,7 +121,7 @@ vows.describe("Queries").addBatch
               scope = connect().find("posts", id, fields: ["title"])
               scope.one @callback
           "should return a single post": (post)->
-            assert.equal post.title, "Test 1"
+            assert.equal post.title, "Post 1"
           "should return specified fields": (post)->
             assert.isUndefined post.author_id
         "ID only":
@@ -131,7 +131,7 @@ vows.describe("Queries").addBatch
               scope = connect().find("posts", id)
               scope.one @callback
           "should return a single post": (post)->
-            assert.equal post.title, "Test 1"
+            assert.equal post.title, "Post 1"
 
 
       # -- Test connect().find() --
@@ -166,13 +166,13 @@ vows.describe("Queries").addBatch
             connect().distinct "posts", "title", author_id: 1, @callback
           "should return distinct values": (values)->
             assert.equal values.length, 2
-            assert.deepEqual values, ["Test 1", "Test 2"]
+            assert.deepEqual values, ["Post 1", "Post 2"]
         "callback only":
           topic: ->
             connect().distinct "posts", "title", @callback
           "should return distinct values": (values)->
             assert.equal values.length, 3
-            assert.deepEqual values, ["Test 1", "Test 2", "Test 3"]
+            assert.deepEqual values, ["Post 1", "Post 2", "Post 3"]
         "no callback":
           topic: ->
             try
@@ -241,7 +241,7 @@ vows.describe("Queries").addBatch
               id = (post._id for post in posts)[1]
               collection.find id, fields: ["title"], @callback
           "should return a single post": (post)->
-            assert.equal post.title, "Test 2"
+            assert.equal post.title, "Post 2"
           "should return specified fields": (post)->
             assert.isUndefined post.author_id
         "ID and callback":
@@ -250,7 +250,7 @@ vows.describe("Queries").addBatch
               id = (post._id for post in posts)[1]
               collection.find id, @callback
           "should return a single post": (post)->
-            assert.equal post.title, "Test 2"
+            assert.equal post.title, "Post 2"
           "should return all fields": (post)->
             assert post.author_id
             assert post.title
@@ -265,7 +265,7 @@ vows.describe("Queries").addBatch
             topic: (scope)->
               scope.one @callback
             "should find specific object": (post)->
-              assert.equal post.title, "Test 2"
+              assert.equal post.title, "Post 2"
 
       
       # -- Test collection().one() --
@@ -302,7 +302,7 @@ vows.describe("Queries").addBatch
               id = (post._id for post in posts)[1]
               collection.one id, fields: ["title"], @callback
           "should return matching post": (post)->
-            assert.equal post.title, "Test 2"
+            assert.equal post.title, "Post 2"
           "should return specified fields": (post)->
             assert post.title
             assert.isUndefined post.author_id
@@ -312,7 +312,7 @@ vows.describe("Queries").addBatch
               id = (post._id for post in posts)[1]
               collection.one id, @callback
           "should return a single post": (post)->
-            assert.equal post.title, "Test 2"
+            assert.equal post.title, "Post 2"
           "should return all fields": (post)->
             assert post.author_id
             assert post.title
@@ -447,13 +447,13 @@ vows.describe("Queries").addBatch
             collection.distinct "title", author_id: 1, @callback
           "should return distinct values": (values)->
             assert.equal values.length, 2
-            assert.deepEqual values, ["Test 1", "Test 2"]
+            assert.deepEqual values, ["Post 1", "Post 2"]
         "callback only":
           topic: (collection)->
             collection.distinct "title", @callback
           "should return distinct values": (values)->
             assert.equal values.length, 3
-            assert.deepEqual values, ["Test 1", "Test 2", "Test 3"]
+            assert.deepEqual values, ["Post 1", "Post 2", "Post 3"]
         "no callback":
           topic: (collection)->
             try
@@ -480,7 +480,7 @@ vows.describe("Queries").addBatch
               scope.all @callback
             "should find all objects in the collection": (posts)->
               assert.equal posts.length, 3
-              assert.include (post.title for post in posts), "Test 2"
+              assert.include (post.title for post in posts), "Post 2"
         "with criteria":
           topic: (collection)->
             scope = collection.where(author_id: 1)
@@ -492,11 +492,11 @@ vows.describe("Queries").addBatch
         "nested":
           topic: (collection)->
             scope = collection.where(author_id: 1)
-            scope = scope.where(title: "Test 2")
+            scope = scope.where(title: "Post 2")
             scope.all @callback
           "should use combined scope": (posts)->
             assert.equal posts.length, 1
-            assert.equal posts[0].title, "Test 2"
+            assert.equal posts[0].title, "Post 2"
 
 
       # -- Test Scope fields, asc, desc, limit and skip --
@@ -544,25 +544,25 @@ vows.describe("Queries").addBatch
               scope.asc().all @callback
             "should return in natural order": (posts)->
               titles = (post.title for post in posts)
-              assert.deepEqual titles, ["Test 1", "Test 2", "Test 3"]
+              assert.deepEqual titles, ["Post 1", "Post 2", "Post 3"]
           "single argument":
             topic: (scope)->
               scope.asc("category").all @callback
             "should return in specified order": (posts)->
               titles = (post.title for post in posts)
-              assert.deepEqual titles, ["Test 2", "Test 1", "Test 3"]
+              assert.deepEqual titles, ["Post 2", "Post 1", "Post 3"]
           "multiple arguments":
             topic: (scope)->
               scope.asc("category", "title").all @callback
             "should return in specified order": (posts)->
               titles = (post.title for post in posts)
-              assert.deepEqual titles, ["Test 2", "Test 1", "Test 3"]
+              assert.deepEqual titles, ["Post 2", "Post 1", "Post 3"]
           "array arguments":
             topic: (scope)->
               scope.asc(["category", "title"]).all @callback
             "should return in specified order": (posts)->
               titles = (post.title for post in posts)
-              assert.deepEqual titles, ["Test 2", "Test 1", "Test 3"]
+              assert.deepEqual titles, ["Post 2", "Post 1", "Post 3"]
 
         "desc":
           topic: ->
@@ -572,25 +572,25 @@ vows.describe("Queries").addBatch
               scope.desc().all @callback
             "should return in natural order": (posts)->
               titles = (post.title for post in posts)
-              assert.deepEqual titles, ["Test 1", "Test 2", "Test 3"]
+              assert.deepEqual titles, ["Post 1", "Post 2", "Post 3"]
           "single argument":
             topic: (scope)->
               scope.desc("title").all @callback
             "should return in specified order": (posts)->
               titles = (post.title for post in posts)
-              assert.deepEqual titles, ["Test 3", "Test 2", "Test 1"]
+              assert.deepEqual titles, ["Post 3", "Post 2", "Post 1"]
           "multiple arguments":
             topic: (scope)->
               scope.desc("title", "category").all @callback
             "should return in specified order": (posts)->
               titles = (post.title for post in posts)
-              assert.deepEqual titles, ["Test 3", "Test 2", "Test 1"]
+              assert.deepEqual titles, ["Post 3", "Post 2", "Post 1"]
           "array arguments":
             topic: (scope)->
               scope.desc(["title", "category"]).all @callback
             "should return in specified order": (posts)->
               titles = (post.title for post in posts)
-              assert.deepEqual titles, ["Test 3", "Test 2", "Test 1"]
+              assert.deepEqual titles, ["Post 3", "Post 2", "Post 1"]
 
         "combined asc, desc":
           topic: ->
@@ -600,13 +600,13 @@ vows.describe("Queries").addBatch
               scope.asc("category").desc("title").all @callback
             "should return in specified order": (posts)->
               titles = (post.title for post in posts)
-              assert.deepEqual titles, ["Test 2", "Test 3", "Test 1"]
+              assert.deepEqual titles, ["Post 2", "Post 3", "Post 1"]
           "mixed order":
             topic: (scope)->
               scope.asc("category").asc("title").all @callback
             "should return in specified order": (posts)->
               titles = (post.title for post in posts)
-              assert.deepEqual titles, ["Test 2", "Test 1", "Test 3"]
+              assert.deepEqual titles, ["Post 2", "Post 1", "Post 3"]
 
         "limit":
           topic: ->
@@ -616,7 +616,7 @@ vows.describe("Queries").addBatch
             assert.equal posts.length, 1
           "should return first results": (posts)->
             titles = (post.title for post in posts)
-            assert.deepEqual titles, ["Test 1"]
+            assert.deepEqual titles, ["Post 1"]
 
         "skip":
           topic: ->
@@ -626,7 +626,7 @@ vows.describe("Queries").addBatch
             assert.equal posts.length, 2
           "should skip first result": (posts)->
             titles = (post.title for post in posts)
-            assert.deepEqual titles, ["Test 2", "Test 3"]
+            assert.deepEqual titles, ["Post 2", "Post 3"]
 
         "limit, skip":
           topic: ->
@@ -636,17 +636,17 @@ vows.describe("Queries").addBatch
             assert.equal posts.length, 1
           "should skip first result, return only one": (posts)->
             titles = (post.title for post in posts)
-            assert.deepEqual titles, ["Test 2"]
+            assert.deepEqual titles, ["Post 2"]
 
 
         # -- Test Scope one, each and all --
 
         "one":
           topic: ->
-            connect().find("posts").where(title: "Test 2").one @callback
+            connect().find("posts").where(title: "Post 2").one @callback
           "should return one object": (post)->
             assert post
-            assert.equal post.title, "Test 2"
+            assert.equal post.title, "Post 2"
 
         "each":
           topic: ->
@@ -658,7 +658,7 @@ vows.describe("Queries").addBatch
                 @callback null, titles
           "should pass each object, then null": (titles)->
             assert.equal titles.length, 2
-            assert.deepEqual titles, ["Test 1", "Test 2"]
+            assert.deepEqual titles, ["Post 1", "Post 2"]
 
         "all":
           topic: ->
@@ -668,6 +668,19 @@ vows.describe("Queries").addBatch
             for post in posts
               assert.equal post.author_id, 1
 
+        # -- Test Scope count, distinct --
+        
+        "count":
+          topic: ->
+            connect().find("posts").where(author_id: 1).count @callback
+          "should return number of matching objects": (count)->
+            assert.equal count, 2
+
+        "distinct":
+          topic: ->
+            connect().find("posts").where(author_id: 1).distinct "title", @callback
+          "should return distinct values": (titles)->
+            assert.deepEqual titles, ["Post 1", "Post 2"]
     ###
     "Simple queries":
       "count":
@@ -678,7 +691,7 @@ vows.describe("Queries").addBatch
             assert.equal count, 3
         "query":
           topic: (connect)->
-            connect.find("posts", text: "Test 1").count @callback
+            connect.find("posts", text: "Post 1").count @callback
           "should return number of records in collection": (count)->
             assert.equal count, 1
 
@@ -688,33 +701,33 @@ vows.describe("Queries").addBatch
             connect.find("posts").distinct "text", @callback
           "should return all distinct values": (values)->
             assert.equal values.length, 3
-            assert.include values, "Test 1"
-            assert.include values, "Test 2"
-            assert.include values, "Test 3"
+            assert.include values, "Post 1"
+            assert.include values, "Post 2"
+            assert.include values, "Post 3"
         "query":
           topic: (connect)->
-            connect.find("posts", text: "Test 2").distinct "text", @callback
+            connect.find("posts", text: "Post 2").distinct "text", @callback
           "should return only matching records": (values)->
             assert.equal values.length, 1
-            assert.include values, "Test 2"
+            assert.include values, "Post 2"
 
       "find one":
         "no query":
           topic: (connect)->
             connect.find("posts").one @callback
           "should return a single post": (post)->
-            assert.equal "Test 1", post.text
+            assert.equal "Post 1", post.text
             assert post._id
         "with query":
           topic: (connect)->
-            connect.find("posts", text: "Test 2").one @callback
+            connect.find("posts", text: "Post 2").one @callback
           "should return a single post": (post)->
-            assert.equal "Test 2", post.text
+            assert.equal "Post 2", post.text
         "with where query":
           topic: (connect)->
-            connect.find("posts").where(text: "Test 3").one @callback
+            connect.find("posts").where(text: "Post 3").one @callback
           "should return a single post": (post)->
-            assert.equal "Test 3", post.text
+            assert.equal "Post 3", post.text
         "with no fields":
           topic: (connect)->
             connect.find("posts").fields().one @callback
@@ -750,9 +763,9 @@ vows.describe("Queries").addBatch
               @callback null, objects
           finder.next takeNext
         "should call once for each post": (objects)->
-          assert.equal "Test 1", objects[0].text
-          assert.equal "Test 2", objects[1].text
-          assert.equal "Test 3", objects[2].text
+          assert.equal "Post 1", objects[0].text
+          assert.equal "Post 2", objects[1].text
+          assert.equal "Post 3", objects[2].text
         "should call last with null": (objects)->
           assert.equal 4, objects.length
           assert.isNull objects[3]
@@ -761,7 +774,7 @@ vows.describe("Queries").addBatch
       # Rewind is broken in connect 0.9.6-23
       "rewind":
         topic: (connect)->
-          finder = connect.find("posts").where(text: "Test 2")
+          finder = connect.find("posts").where(text: "Post 2")
           objects = []
           takeNext = (error, object)=>
             objects.push object
@@ -774,9 +787,9 @@ vows.describe("Queries").addBatch
               @callback null, objects
           finder.next takeNext
         "should rewind on query results": (objects)->
-          assert.equal "Test 2", objects[0].text
+          assert.equal "Post 2", objects[0].text
           assert.isNull objects[1]
-          assert.equal "Test 2", objects[2].text
+          assert.equal "Post 2", objects[2].text
           assert.isNull objects[3]
       ##
 
