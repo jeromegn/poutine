@@ -35,18 +35,91 @@ class Collection
       [callback, options] = [options, null]
     if !callback && !options && selector instanceof Function
       [callback, selector] = [selector, null]
-    if selector instanceof Array
-      selector = { _id: { $in: selector } }
     if selector instanceof @_database.ObjectID || selector instanceof String
       if callback
-        this.where(_id: selector).extend(options).one callback
+        this.one selector, options, callback
       else
         return this.where(_id: selector).extend(options)
     else
       if callback
-        this.where(selector).extend(options).all callback
+        this.all selector, options, callback
       else
         return this.where(selector).extend(options)
+
+  # Passes matching object from this query to callback.
+  #
+  # Takes three arguments, selector, options and callback.  Can also be called
+  # with selector and callback or callback alone.
+  one: (selector, options, callback)->
+    unless callback
+      if options
+        [callback, options] = [options, null]
+      else
+        [callback, selector] = [selector, null]
+    throw new Error("Callback required") unless callback instanceof Function
+    @_connect (error, collection, database)=>
+      return callback error if error
+      collection.findOne selector || {}, options || {}, (error, object)=>
+        database.end()
+        callback error, object, database
+    return
+
+  # Passes each objects from this query to callback.  Passes null after the
+  # last object.
+  #
+  # Takes three arguments, selector, options and callback.  Can also be called
+  # with selector and callback or callback alone.
+  each: (selector, options, callback)->
+    unless callback
+      if options
+        [callback, options] = [options, null]
+      else
+        [callback, selector] = [selector, null]
+    throw new Error("Callback required") unless callback instanceof Function
+    if selector instanceof Array
+      selector = { _id: { $in: selector } }
+    this.query selector, options, (error, cursor)=>
+      return callback error if error
+      # Retrieve next object and pass to callback.
+      readNext = =>
+        cursor.nextObject (error, object)=>
+          if error
+            cursor.close()
+            callback error
+          else
+            if @model && object
+              model = new @model()
+              for k,v of object
+                model[k] = v
+              callback null, model
+            else
+              callback null, object
+            # Use nextTick to avoid stack overflow on large result sets.
+            if object
+              process.nextTick readNext
+            else
+              cursor.close()
+      readNext()
+    return
+
+  # Passes all objects from this query to callback.
+  #
+  # Takes three arguments, selector, options and callback.  Can also be called
+  # with selector and callback or callback alone.
+  all: (selector, options, callback)->
+    unless callback
+      if options
+        [callback, options] = [options, null]
+      else
+        [callback, selector] = [selector, null]
+    throw new Error("Callback required") unless callback instanceof Function
+    objects = []
+    this.each selector, options, (error, object)=>
+      return callback error if error
+      if object
+        objects.push object
+      else
+        callback null, objects, @_database
 
   # Passes number of records in this query to callback.
   #
@@ -106,78 +179,8 @@ class Collection
 
 
 
-  # Passes each objects from this query to callback.  Passes null after the
-  # last object.
-  #
-  # Takes three arguments, selector, options and callback.  Can also be called
-  # with selector and callback or callback alone.
-  each: (selector, options, callback)->
-    unless callback
-      if options
-        [callback, options] = [options, null]
-      else
-        [callback, selector] = [selector, null]
-    this.query selector, options, (error, cursor)=>
-      return callback error if error
-      # Retrieve next object and pass to callback.
-      readNext = =>
-        cursor.nextObject (error, object)=>
-          if error
-            cursor.close()
-            callback error
-          else
-            if @model && object
-              model = new @model()
-              for k,v of object
-                model[k] = v
-              callback null, model
-            else
-              callback null, object
-            # Use nextTick to avoid stack overflow on large result sets.
-            if object
-              process.nextTick readNext
-            else
-              cursor.close()
-      readNext()
-    return
-
-  # Passes all objects from this query to callback.
-  #
-  # Takes three arguments, selector, options and callback.  Can also be called
-  # with selector and callback or callback alone.
-  all: (selector, options, callback)->
-    unless callback
-      if options
-        [callback, options] = [options, null]
-      else
-        [callback, selector] = [selector, null]
-    objects = []
-    this.each selector, options, (error, object)=>
-      return callback error if error
-      if object
-        objects.push object
-      else
-        callback null, objects, @_database
-
 
   
-
-  # Passes matching object from this query to callback.
-  #
-  # Takes three arguments, selector, options and callback.  Can also be called
-  # with selector and callback or callback alone.
-  one: (selector, options, callback)->
-    unless callback
-      if options
-        [callback, options] = [options, null]
-      else
-        [callback, selector] = [selector, null]
-    @_connect (error, collection, database)=>
-      return callback error if error
-      collection.findOne selector || {}, options || {}, (error, object)=>
-        database.end()
-        callback error, object, database
-    return
 
   # Used internally to open a cursor for queries.
   query: (selector, options, callback)->
@@ -216,6 +219,8 @@ class Collection
 #     console.log "Found these posts:", titles
 class Scope
   constructor: (@_collection, @_selector, @_options)->
+
+  # -- Refine selector/options --
 
   # Refines query selector.
   #
@@ -299,11 +304,14 @@ class Scope
     return @extend(sort: sort)
 
 
+  # -- Load objects --
+
   # Passes object to callback.
   #
   # Example:
   #   connect().find("posts", author_id: id).one (err, post, db)->
   one: (callback)->
+    throw new Error("Callback required") unless callback instanceof Function
     @_collection.one @_selector, @_options, callback
 
   # Passes each object to callback.  Passes null as last object.
@@ -311,6 +319,7 @@ class Scope
   # Example:
   #   connect().find("posts").each (err, post, db)->
   each: (callback)->
+    throw new Error("Callback required") unless callback instanceof Function
     @_collection.each @_selector, @_options, callback
 
   # Passes all objects to callback.
@@ -318,7 +327,12 @@ class Scope
   # Example:
   #   connect().find("posts").all (err, posts)->
   all: (callback)->
+    throw new Error("Callback required") unless callback instanceof Function
     @_collection.all @_selector, @_options, callback
+
+
+
+
 
   # Opens cursor and passes next result to query.  Passes null if there are no
   # more results.
@@ -343,6 +357,12 @@ class Scope
       @_cursor.close()
     return
 
+
+  # -- Transformations --
+
+  map: ->
+  filter: ->
+  reduce: ->
 
   # Passes number of records in this query to callback.
   #

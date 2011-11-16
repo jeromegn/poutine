@@ -194,6 +194,7 @@ Alternatively, with one less callback:
 You can query the connection directly by using methods like `find`, `count` and `distinct`.  These methods take a
 collection name/model as the first argument.  The same methods are also available on a collection.
 
+
 ### Loading Objects
 
 To load a single object by ID, call `find` with that ID.  For example:
@@ -232,6 +233,32 @@ The same method is available on a collection.  For example:
     posts.find author_id: author._id, (error, posts)->
       console.log "Found #{posts.length} posts by #{author.name}"
 
+If you're only interested in loading a single object, you can call the method `one` with query selector or object
+identifier.  For example:
+
+    posts = connect().collection("posts")
+    posts.one author_id: author._id, (error, post)->
+      console.log "Found this post:", post.title
+
+You can load all objects by calling `all` with query selector or array of object identifiers.  For example:
+
+    posts = connect().collection("posts")
+    posts.all author_id: author._id, (error, posts)->
+      console.log "Found #{posts.length} posts by #{author.name}"
+
+And you can also use `each`, which will be called once for each object loaded, and finally with null.  For example:
+
+    posts = connect().collection("posts")
+    console.log "Loading ..."
+    posts.each author_id: author._id, (error, post)->
+      if post
+        console.log post.title
+      else
+        console.log "Done"
+
+The real beautify of `one`, `each` and `all` is when used in combination with scopes, as you'll see below.
+
+
 ### Counting Objects
 
 You can count how many objects are in a given collection by calling `count`, with or without a selector. For example:
@@ -246,6 +273,7 @@ As with `find`, these methods are also available on a collection.  Unlike `find`
 
     posts.count (error, posts)->
       console.log "There are #{count} posts"
+
 
 ### Distinct Values
 
@@ -262,6 +290,7 @@ As with `find`, these methods are also available on a collection.  Unlike `find`
     posts.distinct "date", author_id: author._id, (error, dates)->
       console.log "#{author.name} posted on #{dates.join(", ")}"
 
+
 ### Queries
 
 The `Scope` object allows you to refine the query using chained methods calls, and to retrieve objects in a variety of
@@ -275,7 +304,7 @@ You can chain `where` methods together to create more specific scopes.  For exam
     # For specific author
     for_author = posts.where(author_id: author._id)
     # Written today
-    today = for_author.where(created_at: { $gt: (new Date).beginningOfDy() })
+    today = for_author.where(created_at: { $gt: (new Date).beginningOfDay() })
 
 You can also use chain methods to modify the query options, using any of the following methods:
 
@@ -292,6 +321,25 @@ For example:
       console.log "Posts from newest to oldest:", titles
 
 The `field`, `asc` and `desc` methods accept a list of fields, either as multiple arguments, or an array.
+
+To get all the objects selected by a scope you can use `all` and `each`.  You can also get a single object (the first
+match) by calling `one`, the number of objects by calling `count` and distinct values by calling `distinct`.  These
+methods operate the same way as the collection methods of the same name.
+
+For example:
+
+    posts.where(author_id: author._id).fields("title").all (error, posts)->
+      titles = (post.title for post in posts)
+      console.log "Found these posts:", titles
+
+    posts.where(created_at: { $gt: (new Date).beginningOfDay() }).all (error, count)->
+      console.log "Published #{count} posts today"
+
+    posts.desc("created_at").fields("title").each (error, post)->
+      console.log "Published #{post.title}"
+
+
+
 
     query.count
     query.distinct

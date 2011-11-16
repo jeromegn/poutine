@@ -77,8 +77,7 @@ vows.describe("Queries").addBatch
 
         "IDs, options and callback":
           topic: ->
-            connect().find "posts", (err, posts, db)=>
-              ids = (post._id for post in posts)
+            connect().distinct "posts", "_id", (err, ids, db)=>
               db.find "posts", ids, sort: [["title", -1]], @callback
           "should return all posts": (posts)->
             assert.equal posts.length, 3
@@ -87,15 +86,13 @@ vows.describe("Queries").addBatch
             assert.deepEqual title, ["Test 3", "Test 2", "Test 1"]
         "IDs and callback":
           topic: ->
-            connect().find "posts", (err, posts, db)=>
-              ids = (post._id for post in posts)
+            connect().distinct "posts", "_id", (err, ids, db)=>
               db.find "posts", ids, @callback
           "should return all posts": (posts)->
             assert.equal posts.length, 3
         "IDs only":
           topic: ->
-            connect().find "posts", (err, posts, db)=>
-              ids = (post._id for post in posts)
+            connect().distinct "posts", "_id", (err, ids, db)=>
               scope = connect().find("posts", ids)
               scope.all @callback
           "should return all posts": (posts)->
@@ -192,7 +189,7 @@ vows.describe("Queries").addBatch
 
     "collection":
 
-      # -- Test colletion().find() --
+      # -- Test collection().find() --
       
       "find":
         topic: ->
@@ -210,7 +207,7 @@ vows.describe("Queries").addBatch
             collection.find author_id: 1, @callback
           "should return all matching posts": (posts)->
             assert.equal posts.length, 2
-        "query and callback":
+        "query only":
           topic: (collection)->
             collection.find author_id: 1
           "should return a Scope object": (scope)->
@@ -218,8 +215,7 @@ vows.describe("Queries").addBatch
         
         "IDs, options and callback":
           topic: (collection)->
-            collection.all (err, posts, db)=>
-              ids = (post._id for post in posts)
+            collection.distinct "_id", (err, ids)=>
               collection.find ids, fields: ["title"], @callback
           "should return all matching posts": (posts)->
             assert.equal posts.length, 3
@@ -229,8 +225,7 @@ vows.describe("Queries").addBatch
               assert.isUndefined post.author_id
         "IDs only":
           topic: (collection)->
-            collection.all (err, posts, db)=>
-              ids = (post._id for post in posts)
+            collection.distinct "_id", (err, ids)=>
               @callback null, collection.find(ids)
           "should return a Scope": (scope)->
             assert scope.all && scope.one
@@ -273,7 +268,150 @@ vows.describe("Queries").addBatch
               assert.equal post.title, "Test 2"
 
       
-      # -- Test colletion().count() --
+      # -- Test collection().one() --
+      
+      "one":
+        topic: ->
+          connect().collection("posts")
+        "query, options and callback":
+          topic: (collection)->
+            collection.one { author_id: 1 }, fields: ["author_id"], @callback
+          "should return matching post": (post)->
+            assert.equal post.author_id, 1
+          "should return specified fields": (post)->
+            assert post.author_id
+            assert.isUndefined post.title
+        "query and callback":
+          topic: (collection)->
+            collection.one author_id: 1, @callback
+          "should return matching post": (post)->
+            assert.equal post.author_id, 1
+        "no callback":
+          topic: (collection)->
+            try
+              collection.one author_id: 1
+              @callback null
+            catch ex
+              @callback null, ex
+          "should fail": (error)->
+            assert error instanceof Error
+       
+        "ID, options and callback":
+          topic: (collection)->
+            collection.all (err, posts, db)=>
+              id = (post._id for post in posts)[1]
+              collection.one id, fields: ["title"], @callback
+          "should return matching post": (post)->
+            assert.equal post.title, "Test 2"
+          "should return specified fields": (post)->
+            assert post.title
+            assert.isUndefined post.author_id
+        "ID and callback":
+          topic: (collection)->
+            collection.all (err, posts, db)=>
+              id = (post._id for post in posts)[1]
+              collection.one id, @callback
+          "should return a single post": (post)->
+            assert.equal post.title, "Test 2"
+          "should return all fields": (post)->
+            assert post.author_id
+            assert post.title
+
+
+      # -- Test collection().all() --
+      
+      "all":
+        topic: ->
+          connect().collection("posts")
+        "query, options and callback":
+          topic: (collection)->
+            collection.all { author_id: 1 }, fields: ["title"], @callback
+          "should return all matching posts": (posts)->
+            assert.equal posts.length, 2
+          "should return specified fields": (posts)->
+            for post in posts
+              assert post.title
+        "query and callback":
+          topic: (collection)->
+            collection.all author_id: 1, @callback
+          "should return all matching posts": (posts)->
+            assert.equal posts.length, 2
+        "no callback":
+          topic: (collection)->
+            try
+              collection.all author_id: 1
+              @callback null
+            catch ex
+              @callback null, ex
+          "should fail": (error)->
+            assert error instanceof Error
+        
+        "IDs, options and callback":
+          topic: (collection)->
+            collection.distinct "_id", (err, ids)=>
+              collection.all ids, fields: ["title"], @callback
+          "should return all matching posts": (posts)->
+            assert.equal posts.length, 3
+          "should return specified fields": (posts)->
+            for post in posts
+              assert post.title
+              assert.isUndefined post.author_id
+
+      # -- Test collection().each() --
+      
+      "each":
+        topic: ->
+          connect().collection("posts")
+        "query, options and callback":
+          topic: (collection)->
+            posts = []
+            collection.each { author_id: 1 }, fields: ["title"], (error, post)=>
+              if post
+                posts.push post
+              else
+                @callback null, posts
+          "should return all matching posts": (posts)->
+            assert.equal posts.length, 2
+          "should return specified fields": (posts)->
+            for post in posts
+              assert post.title
+        "query and callback":
+          topic: (collection)->
+            posts = []
+            collection.each author_id: 1, (error, post)=>
+              if post
+                posts.push post
+              else
+                @callback null, posts
+          "should return all matching posts": (posts)->
+            assert.equal posts.length, 2
+        "no callback":
+          topic: (collection)->
+            try
+              collection.each author_id: 1
+              @callback null
+            catch ex
+              @callback null, ex
+          "should fail": (error)->
+            assert error instanceof Error
+        
+        "IDs, options and callback":
+          topic: (collection)->
+            posts = []
+            collection.distinct "_id", (err, ids)=>
+              collection.each ids, fields: ["title"], (error, post)=>
+                if post
+                  posts.push post
+                else
+                  @callback null, posts
+          "should return all matching posts": (posts)->
+            assert.equal posts.length, 3
+          "should return specified fields": (posts)->
+            for post in posts
+              assert post.title
+              assert.isUndefined post.author_id
+
+      # -- Test collection().count() --
      
       "count":
         topic: ->
@@ -365,7 +503,7 @@ vows.describe("Queries").addBatch
      
       "scope":
         "fields":
-          topic: (scope)->
+          topic: ->
             connect().find("posts")
           "no argument":
             topic: (scope)->
@@ -399,7 +537,7 @@ vows.describe("Queries").addBatch
                 assert post.created_at
 
         "asc":
-          topic: (scope)->
+          topic: ->
             connect().find("posts")
           "no argument":
             topic: (scope)->
@@ -427,7 +565,7 @@ vows.describe("Queries").addBatch
               assert.deepEqual titles, ["Test 2", "Test 1", "Test 3"]
 
         "desc":
-          topic: (scope)->
+          topic: ->
             connect().find("posts")
           "no argument":
             topic: (scope)->
@@ -455,7 +593,7 @@ vows.describe("Queries").addBatch
               assert.deepEqual titles, ["Test 3", "Test 2", "Test 1"]
 
         "combined asc, desc":
-          topic: (scope)->
+          topic: ->
             connect().find("posts")
           "same order":
             topic: (scope)->
@@ -471,7 +609,7 @@ vows.describe("Queries").addBatch
               assert.deepEqual titles, ["Test 2", "Test 1", "Test 3"]
 
         "limit":
-          topic: (scope)->
+          topic: ->
             scope = connect().find("posts")
             scope.limit(1).all @callback
           "should return specified number of objects": (posts)->
@@ -481,7 +619,7 @@ vows.describe("Queries").addBatch
             assert.deepEqual titles, ["Test 1"]
 
         "skip":
-          topic: (scope)->
+          topic: ->
             scope = connect().find("posts")
             scope.skip(1).all @callback
           "should return specified number of objects": (posts)->
@@ -491,7 +629,7 @@ vows.describe("Queries").addBatch
             assert.deepEqual titles, ["Test 2", "Test 3"]
 
         "limit, skip":
-          topic: (scope)->
+          topic: ->
             scope = connect().find("posts")
             scope.skip(1).limit(1).all @callback
           "should return specified number of objects": (posts)->
@@ -499,6 +637,37 @@ vows.describe("Queries").addBatch
           "should skip first result, return only one": (posts)->
             titles = (post.title for post in posts)
             assert.deepEqual titles, ["Test 2"]
+
+
+        # -- Test Scope one, each and all --
+
+        "one":
+          topic: ->
+            connect().find("posts").where(title: "Test 2").one @callback
+          "should return one object": (post)->
+            assert post
+            assert.equal post.title, "Test 2"
+
+        "each":
+          topic: ->
+            titles = []
+            connect().find("posts").where(author_id: 1).each (error, post)=>
+              if post
+                titles.push post.title
+              else
+                @callback null, titles
+          "should pass each object, then null": (titles)->
+            assert.equal titles.length, 2
+            assert.deepEqual titles, ["Test 1", "Test 2"]
+
+        "all":
+          topic: ->
+            connect().find("posts").where(author_id: 1).all @callback
+          "should return all matching objects": (posts)->
+            assert.equal posts.length, 2
+            for post in posts
+              assert.equal post.author_id, 1
+
     ###
     "Simple queries":
       "count":
