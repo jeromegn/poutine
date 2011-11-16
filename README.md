@@ -373,10 +373,10 @@ For example:
     each = (error, post)->
       if post
         console.log post.title
-        scope.nextObject each
+        scope.next each
       else
         console.log "Done"
         scope.close()
     console.log "Finding ..."
-    scope.nextObject each
+    scope.next each
 
