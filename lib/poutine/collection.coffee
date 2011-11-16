@@ -1,3 +1,6 @@
+{ Model } = require("./model")
+
+
 # Represents a collection and all the operation you can do on one.  Database
 # methods like find and insert operate through a collection.
 class Collection
@@ -35,6 +38,9 @@ class Collection
       [callback, options] = [options, null]
     if !callback && !options && selector instanceof Function
       [callback, selector] = [selector, null]
+    if @model
+      options ||= {}
+      options.fields ||= Object.keys(@model.fields)
     if selector instanceof @database.ObjectID || selector instanceof String
       if callback
         @one selector, options, callback
@@ -61,6 +67,12 @@ class Collection
       return callback error if error
       collection.findOne selector || {}, options || {}, (error, object)=>
         database.end()
+        if @model && object
+          try
+            object = Model.instantiate(@model, object)
+          catch error
+            callback error
+            return
         callback error, object, database
     return
 
@@ -88,12 +100,13 @@ class Collection
             callback error
           else
             if @model && object
-              model = new @model()
-              for k,v of object
-                model[k] = v
-              callback null, model
-            else
-              callback null, object
+              try
+                object = Model.instantiate(@model, object)
+              catch error
+                callback error
+                cursor.close()
+                return
+            callback null, object
             # Use nextTick to avoid stack overflow on large result sets.
             if object
               process.nextTick readNext

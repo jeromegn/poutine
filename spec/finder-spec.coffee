@@ -1,10 +1,15 @@
 vows = require("vows")
 assert = require("assert")
+fail = assert.fail
 { connect, setup, Model } = require("./helpers")
 
 
 class Post extends Model
   @collection: "posts"
+
+  @field "title", String
+  @field "author_id"
+  @field "created_at", Date
 
 
 vows.describe("Queries").addBatch
@@ -106,7 +111,7 @@ vows.describe("Queries").addBatch
           "should return a single post": (post)->
             assert.equal post.title, "Post 1"
           "should return specified fields": (post)->
-            assert.isUndefined post.author_id
+            assert !post.author_id
         "ID and callback":
           topic: ->
             connect().find "posts", (err, posts, db)=>
@@ -123,7 +128,7 @@ vows.describe("Queries").addBatch
           "should return a single post": (post)->
             assert.equal post.title, "Post 1"
           "should return specified fields": (post)->
-            assert.isUndefined post.author_id
+            assert !post.author_id
         "ID only":
           topic: ->
             connect().find "posts", (err, posts, db)=>
@@ -222,7 +227,7 @@ vows.describe("Queries").addBatch
           "should return specified fields": (posts)->
             for post in posts
               assert post.title
-              assert.isUndefined post.author_id
+              assert !post.author_id
         "IDs only":
           topic: (collection)->
             collection.distinct "_id", (err, ids)=>
@@ -243,7 +248,7 @@ vows.describe("Queries").addBatch
           "should return a single post": (post)->
             assert.equal post.title, "Post 2"
           "should return specified fields": (post)->
-            assert.isUndefined post.author_id
+            assert !post.author_id
         "ID and callback":
           topic: (collection)->
             collection.all (err, posts, db)=>
@@ -280,7 +285,7 @@ vows.describe("Queries").addBatch
             assert.equal post.author_id, 1
           "should return specified fields": (post)->
             assert post.author_id
-            assert.isUndefined post.title
+            assert !post.title
         "query and callback":
           topic: (collection)->
             collection.one author_id: 1, @callback
@@ -305,7 +310,7 @@ vows.describe("Queries").addBatch
             assert.equal post.title, "Post 2"
           "should return specified fields": (post)->
             assert post.title
-            assert.isUndefined post.author_id
+            assert !post.author_id
         "ID and callback":
           topic: (collection)->
             collection.all (err, posts, db)=>
@@ -355,7 +360,7 @@ vows.describe("Queries").addBatch
           "should return specified fields": (posts)->
             for post in posts
               assert post.title
-              assert.isUndefined post.author_id
+              assert !post.author_id
 
       # -- Test collection().each() --
       
@@ -409,7 +414,7 @@ vows.describe("Queries").addBatch
           "should return specified fields": (posts)->
             for post in posts
               assert post.title
-              assert.isUndefined post.author_id
+              assert !post.author_id
 
       # -- Test collection().count() --
      
@@ -517,8 +522,8 @@ vows.describe("Queries").addBatch
             "should return only specified field": (posts)->
               for post in posts
                 assert post.title
-                assert.isUndefined post.author_id
-                assert.isUndefined post.created_at
+                assert !post.author_id
+                assert !post.created_at
           "multiple arguments":
             topic: (scope)->
               scope.fields("title", "author_id").all @callback
@@ -526,14 +531,14 @@ vows.describe("Queries").addBatch
               for post in posts
                 assert post.title
                 assert post.author_id
-                assert.isUndefined post.created_at
+                assert !post.created_at
           "array arguments":
             topic: (scope)->
               scope.fields(["title", "created_at"]).all @callback
             "should return only specified field": (posts)->
               for post in posts
                 assert post.title
-                assert.isUndefined post.author_id
+                assert !post.author_id
                 assert post.created_at
 
         "asc":
@@ -756,5 +761,108 @@ vows.describe("Queries").addBatch
             "should call once for each post": (posts)->
               assert.equal posts.length, 2
    
+
+    # -- Test models --
+
+    "model":
+
+      "loading":
+        "one":
+          topic: ->
+            connect().find(Post).one @callback
+          "should load object": (post)->
+            assert post instanceof Post
+          "should load fields": (post)->
+            assert post.title
+            assert post.author_id
+            assert post.created_at
+        "all":
+          topic: ->
+            connect().find(Post).all @callback
+          "should load object": (posts)->
+            for post in posts
+              assert post instanceof Post
+          "should load fields": (posts)->
+            for post in posts
+              assert post.title
+              assert post.author_id
+              assert post.created_at
+
+        "undefined fields":
+          topic: ->
+            class Assign extends Model
+              @collection: "posts"
+              @field "title"
+              @field "created_at"
+            connect().collection(Assign).one @callback
+          "should not be loaded": (post)->
+            assert post.title
+            assert post.created_at
+            assert !post.author_id
+
+        "custom assignment":
+          topic: ->
+            class Assign
+              @collection: "posts"
+              assign: (values)->
+                @title = values.title + "!"
+            connect().collection(Assign).one @callback
+          "should call assign method": (post)->
+            assert.equal post.title, "Post 1!"
+          "should not set other fields": (post)->
+            assert !post.author_id
+        "failed assignment":
+          topic: ->
+            class Failed
+              @collection: "posts"
+              assign: (values)->
+                throw "Fail!"
+            connect().collection(Failed).all (error, posts)=>
+              @callback null, error
+          "should pass error to callback": (error)->
+            assert.equal error, "Fail!"
+
+        "onLoad":
+          topic: ->
+            class Assign
+              @collection: "posts"
+              @fields:
+                title: String
+              onLoad: ->
+                @loaded = true if @title
+            connect().collection(Assign).one @callback
+          "should call onLoad method after assigning fields": (post)->
+            assert post.loaded
+        "failed onLoad":
+          topic: ->
+            class Failed
+              @collection: "posts"
+              onLoad: (values)->
+                throw "Fail!"
+            connect().collection(Failed).all (error, posts)=>
+              @callback null, error
+          "should pass error to callback": (error)->
+            assert.equal error, "Fail!"
+
+        "on load":
+          topic: ->
+            class Assign extends Model
+              @collection: "posts"
+              @field "title"
+              onLoad: ->
+                @loaded = true if @title
+            connect().collection(Assign).one @callback
+          "should call onLoad method after assigning fields": (post)->
+            assert post.loaded
+        "failed onLoad":
+          topic: ->
+            class Failed
+              @collection: "posts"
+              onLoad: (values)->
+                throw "Fail!"
+            connect().collection(Failed).all (error, posts)=>
+              @callback null, error
+          "should pass error to callback": (error)->
+            assert.equal error, "Fail!"
 
 .export(module)

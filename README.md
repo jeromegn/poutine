@@ -380,3 +380,24 @@ For example:
     console.log "Finding ..."
     scope.next each
 
+
+### Assigning After Loading
+
+If a model defines a method called `assign`, that method is called after the model instance is created to set its
+properties from the loaded object.  Otherwise, all defined fields are set.
+
+If the model defines a method called `onLoad`, that method is called after the properties are set.
+
+For example:
+
+    class TitleOnly extends Post
+      assign: (values)->
+        # Set title and load author, no other fields.
+        @title = values.title
+        @author = Author.find(values.author_id)
+
+    class Post extends Model
+      onLoad: ->
+        # All fields set, load associated object.
+        @author = Author.find(@author_id)
+
