@@ -338,15 +338,25 @@ For example:
     posts.desc("created_at").fields("title").each (error, post)->
       console.log "Published #{post.title}"
 
+In addition to `each`, you can also call `map`, `filter` and `reduce`.  The `map` method takes two arguments, the first
+is the mapping function that is called for each object, and the last is an object that it passed the mapped array.  For
+example:
 
+    connect().find("posts").map ((post)-> "#{post.title} on #{post.created_at}"), (error, posts)->
+      console.log posts
 
+The `filter` method takes two arguments, the first is the filtering function that is called for each object.  It
+collects each object for which the filtering function returns true, and passes that array to the callback.  For example:
 
-    query.count
-    query.distinct
-    query.one
-    query.all
-    query.each
-    query.map
-    query.filter
-    query.reduce
+    connect().find("posts").filter ((post)-> post.body.length > 500), (error, posts)->
+      console.log "Found #{posts.count} posts longer than 500 characters"
+
+You can call `reduce` with two arguments, the first being the reduce function, which takes a value and an object, and
+returns the new value.  The final value is passed to the callback.
+
+The initial value is null, but you can also call `reduce` with three arguments, passing the initial value as the first
+argument.  For example:
+
+    connect().find("posts").reduce ((total, post)-> total + post.body.length), (error, total)->
+      console.log "Wrote #{total} characters"
 

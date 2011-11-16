@@ -681,73 +681,48 @@ vows.describe("Queries").addBatch
             connect().find("posts").where(author_id: 1).distinct "title", @callback
           "should return distinct values": (titles)->
             assert.deepEqual titles, ["Post 1", "Post 2"]
+
+        # -- Test Scope map, filter, reduce --
+
+        "map":
+          "function":
+            topic: ->
+              connect().find("posts").map ((post)-> post.title + "!"), @callback
+            "should return mapped objects": (titles)->
+              assert.deepEqual titles, ["Post 1!", "Post 2!", "Post 3!"]
+          "name":
+            topic: ->
+              connect().find("posts").map "title", @callback
+            "should return mapped objects": (titles)->
+              assert.deepEqual titles, ["Post 1", "Post 2", "Post 3"]
+
+        "filter":
+          "function":
+            topic: ->
+              connect().find("posts").filter ((post)-> post.author_id < 2), @callback
+            "should return filtered objects": (posts)->
+              for post in posts
+                assert post.author_id < 2
+          "name":
+            topic: ->
+              connect().find("posts").filter "title", @callback
+            "should return filtered objects": (posts)->
+              assert.equal posts.length, 3
+
+        "reduce":
+          "initial value and function":
+            topic: ->
+              connect().find("posts").reduce 0, ((memo, post)-> memo + post.title.length), @callback
+            "should return reduced value": (length)->
+              assert.equal length, 18
+          "function only":
+            topic: ->
+              connect().find("posts").reduce ((memo, post)-> memo + post.title.length), @callback
+            "should return reduced value": (length)->
+              assert.equal length, 18
+
     ###
-    "Simple queries":
-      "count":
-        "all":
-          topic: (connect)->
-            connect.find("posts").count @callback
-          "should return number of records in collection": (count)->
-            assert.equal count, 3
-        "query":
-          topic: (connect)->
-            connect.find("posts", text: "Post 1").count @callback
-          "should return number of records in collection": (count)->
-            assert.equal count, 1
 
-      "distinct":
-        "all":
-          topic: (connect)->
-            connect.find("posts").distinct "text", @callback
-          "should return all distinct values": (values)->
-            assert.equal values.length, 3
-            assert.include values, "Post 1"
-            assert.include values, "Post 2"
-            assert.include values, "Post 3"
-        "query":
-          topic: (connect)->
-            connect.find("posts", text: "Post 2").distinct "text", @callback
-          "should return only matching records": (values)->
-            assert.equal values.length, 1
-            assert.include values, "Post 2"
-
-      "find one":
-        "no query":
-          topic: (connect)->
-            connect.find("posts").one @callback
-          "should return a single post": (post)->
-            assert.equal "Post 1", post.text
-            assert post._id
-        "with query":
-          topic: (connect)->
-            connect.find("posts", text: "Post 2").one @callback
-          "should return a single post": (post)->
-            assert.equal "Post 2", post.text
-        "with where query":
-          topic: (connect)->
-            connect.find("posts").where(text: "Post 3").one @callback
-          "should return a single post": (post)->
-            assert.equal "Post 3", post.text
-        "with no fields":
-          topic: (connect)->
-            connect.find("posts").fields().one @callback
-          "should return _id only": (post)->
-            assert post._id
-            assert.isUndefined post.text
-        "with specified fields":
-          topic: (connect)->
-            connect.find("posts").fields("text").one @callback
-          "should return specified fields only": (post)->
-            assert post._id
-            assert post.text
-            assert.isUndefined post.author_id
-        "with nested arrays":
-          topic: (connect)->
-            connect.find("posts").fields(["author_id"]).one @callback
-          "should return specified fields only": (post)->
-            assert post._id
-            assert.isUndefined post.text
-            assert post.author_id
 
  
     "Using cursor":

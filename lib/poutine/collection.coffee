@@ -330,7 +330,94 @@ class Scope
     throw new Error("Callback required") unless callback instanceof Function
     @_collection.all @_selector, @_options, callback
 
+  # Passes number of records in this query to callback.
+  #
+  # Example:
+  #   connect().find("posts", author_id: id).count (err, count)->
+  count: (callback)->
+    @_collection.count @_selector, callback
 
+  # Passes distinct values callback.
+  #
+  # Example:
+  #   connect().find("posts").distinct "author_id", (err, author_ids)->
+  distinct: (key, callback)->
+    @_collection.distinct key, @_selector, callback
+
+  # -- Transformation --
+
+  # Passes each object to the mapping function, and passes the result to the
+  # callback.  You can also call with a function name, in which case it will
+  # call that function on each object.
+  #
+  # Example:
+  #   connect().find("posts").map ((post)-> "#{post.title} on #{post.created_at}"), (error, posts)->
+  #     console.log posts
+  map: (fn, callback)->
+    unless typeof fn == "function"
+      name = fn
+      fn = (object)-> object[name]
+    throw new Error("Callback required") unless callback instanceof Function
+    results = []
+    @_collection.each @_selector, @_options, (error, object)->
+      return callback error if error
+      if object
+        try
+          results.push fn(object)
+        catch error
+          callback error
+      else
+        callback null, results
+
+  # Passes each object to the filtering function, select only objects for which
+  # the filtering function returns true, and pass that selection to the
+  # callback.  You can also call with a function name, in which case it will
+  # call that function on each object.
+  #
+  # Example:
+  #   connect().find("posts").filter ((post)-> post.body.length > 500), (error, posts)->
+  #     console.log "Found #{posts.count} posts longer than 500 characters"
+  filter: (fn, callback)->
+    unless typeof fn == "function"
+      name = fn
+      fn = (object)-> object[name]
+    throw new Error("Callback required") unless callback instanceof Function
+    results = []
+    @_collection.each @_selector, @_options, (error, object)->
+      return callback error if error
+      if object
+        try
+          results.push object if fn(object)
+        catch error
+          callback error
+      else
+        callback null, results
+
+  # Passes each object to the reduce function, collects the reduce value, and
+  # passes that to the callback.
+  #
+  # With two arguments, the first argument is the reduce function that accepts
+  # value and object, and the second argument is the callback.  The initial
+  # value is null.
+  #
+  # With three arguments, the first arguments supplies the initial value.
+  #
+  # Example:
+  #   connect().find("posts").reduce ((total, post)-> total + post.body.length), (error, total)->
+  #     console.log "Wrote #{total} characters"
+  reduce: (value, fn, callback)->
+    if arguments.length < 3
+      [value, fn, callback] = [null, value, fn]
+    throw new Error("Callback required") unless callback instanceof Function
+    @_collection.each @_selector, @_options, (error, object)->
+      return callback error if error
+      if object
+        try
+          value = fn(value, object)
+        catch error
+          callback error
+      else
+        callback null, value
 
 
 
@@ -358,25 +445,6 @@ class Scope
     return
 
 
-  # -- Transformations --
-
-  map: ->
-  filter: ->
-  reduce: ->
-
-  # Passes number of records in this query to callback.
-  #
-  # Example:
-  #   connect().find("posts", author_id: id).count (err, count)->
-  count: (callback)->
-    @_collection.count @_selector, callback
-
-  # Passes distinct values callback.
-  #
-  # Example:
-  #   connect().find("posts").distinct "author_id", (err, author_ids)->
-  distinct: (key, callback)->
-    @_collection.distinct key, @_selector, callback
 
 
 
