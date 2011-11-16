@@ -1,7 +1,7 @@
 # Represents a collection and all the operation you can do on one.  Database
 # methods like find and insert operate through a collection.
 class Collection
-  constructor: (@name, @database, @model)->
+  constructor: (@name, @_database, @model)->
 
   # -- Finders --
 
@@ -37,7 +37,7 @@ class Collection
       [callback, selector] = [selector, null]
     if selector instanceof Array
       selector = { _id: { $in: selector } }
-    if selector instanceof @database.ObjectID || selector instanceof String
+    if selector instanceof @_database.ObjectID || selector instanceof String
       if callback
         this.where(_id: selector).extend(options).one callback
       else
@@ -95,14 +95,14 @@ class Collection
 
   # Passes error, collection and database to callback.
   _connect: (callback)->
-    @database.driver (error, connection, end)=>
+    @_database.driver (error, connection, end)=>
       return callback error if error
       connection.collection @name, (error, collection)=>
         if error
           end()
           callback error
         else
-          callback null, collection, @database
+          callback null, collection, @_database
 
 
 
@@ -157,7 +157,7 @@ class Collection
       if object
         objects.push object
       else
-        callback null, objects, @database
+        callback null, objects, @_database
 
 
   
@@ -194,16 +194,28 @@ class Collection
 
 
 
-
-# Represents a query.  The find method returns this object.  You can further
-# refine the query using chained method before asking it to return records,
-# counts, etc.
+# A scope limits objects returned by a query.  Scopes can also be used to
+# insert, update and remove selected objects.
 #
-# For example, to find 50 posts and only return their text:
+# Scopes are returned when you call `find` with no callback, or call `where` on
+# a collection.
 #
-#   connect().find("posts", author_id: authpor._id).fields("text").limit(50).all (err, posts, db)->
+# A scope can be further refined by calling `where`.  You can also modify query
+# options by calling `fields`, `asc`, `desc`, `limit` and `skip`.
+#
+# You can retrieve objects by calling `one`, `all`, `each`, `map`, `filter` or
+# `reduce`.
+#
+# For example, to find 50 posts by certain author and only return their title:
+#
+#   posts = connect().find("posts")
+#   by_author = posts.where(author_id: author._id)
+#   limited = by_author.fields("title").limit(50)
+#   limited.all (err, posts)->
+#     titles = (post.title for post in posts)
+#     console.log "Found these posts:", titles
 class Scope
-  constructor: (@collection, @selector, @options)->
+  constructor: (@_collection, @_selector, @_options)->
 
   # Refines query selector.
   #
@@ -212,18 +224,20 @@ class Scope
   #   connect().find("posts").where(author_id: author._id)
   where: (selector)->
     combined = {}
-    if @selector
-      combined[k] = v for k, v of @selector
+    if @_selector
+      combined[k] = v for k, v of @_selector
     if selector
       combined[k] = v for k, v of selector
-    return new Scope(@collection, combined, @options)
+    return new Scope(@_collection, combined, @_options)
 
-  # Instructs query to return only named fields.
+  # Instructs query to return only named fields.  You can call with multiple
+  # arguments, an array argument or no arguments if you're only interested in
+  # the object IDs.
   #
   # Example:
   #   connect().find("posts").fields("author_id", "title")
   #   connect().find("posts").fields(["author_id", "title"])
-  fields: ()->
+  fields: ->
     fields = []
     for arg in arguments
       if Array.isArray(arg)
@@ -232,22 +246,57 @@ class Scope
         fields.push arg.toString()
     return @extend(fields: fields)
 
+  # Instructs query to sort object by ascending order.  You can call with
+  # multiple arguments, an array argument or no arguments if you're only
+  # interested in the object IDs.
+  #
+  # Example:
+  #   connect().find("posts").asc("created_at")
+  asc: ->
+    return @sort(arguments, 1)
+
+  # Instructs query to sort object by descending order.  You can call with
+  # multiple arguments, an array argument or no arguments if you're only
+  # interested in the object IDs.
+  #
+  # Example:
+  #   connect().find("posts").desc("created_at")
+  desc: ->
+    return @sort(arguments, -1)
+
   # Limit number of records returned.
+  #
+  # Example:
+  #   first_ten = posts.limit(10)
   limit: (limit)->
     return @extend(limit: limit)
 
   # Return records from specified offset.
+  #
+  # Example:
+  #   next_ten = posts.skip(10).limit(10)
   skip: (skip)->
     return @extend(skip: skip)
 
-  # Returns query with combined options.
+  # Returns a scope with combined options.
   extend: (options)->
     combined = {}
-    if @options
-      combined[k] = v for k,v of @options
+    if @_options
+      combined[k] = v for k,v of @_options
     if options
       combined[k] = v for k,v of options
-    return new Scope(@collection, @selector, combined)
+    return new Scope(@_collection, @_selector, combined)
+
+  # Changes sorting order.
+  sort: (fields, dir)->
+    throw "Direction must be 1 (asc) or -1 (desc)" unless dir == 1 || dir == -1
+    sort = @_options.sort || []
+    for field in fields
+      if Array.isArray(field)
+        sort = sort.concat([f, dir] for f in field)
+      else
+        sort = sort.concat([[field, dir]])
+    return @extend(sort: sort)
 
 
   # Passes object to callback.
@@ -255,43 +304,43 @@ class Scope
   # Example:
   #   connect().find("posts", author_id: id).one (err, post, db)->
   one: (callback)->
-    @collection.one @selector, @options, callback
+    @_collection.one @_selector, @_options, callback
 
   # Passes each object to callback.  Passes null as last object.
   #
   # Example:
   #   connect().find("posts").each (err, post, db)->
   each: (callback)->
-    @collection.each @selector, @options, callback
+    @_collection.each @_selector, @_options, callback
 
   # Passes all objects to callback.
   #
   # Example:
   #   connect().find("posts").all (err, posts)->
   all: (callback)->
-    @collection.all @selector, @options, callback
+    @_collection.all @_selector, @_options, callback
 
   # Opens cursor and passes next result to query.  Passes null if there are no
   # more results.
   next: (callback)->
-    if @cursor
-      @cursor.nextObject (error, object)=>
+    if @_cursor
+      @_cursor.nextObject (error, object)=>
         callback error, object
     else
-      @collection.query @selector, @options, (error, @cursor)=>
+      @_collection.query @_selector, @_options, (error, @_cursor)=>
         return callback error if error
-        @cursor.nextObject callback
+        @_cursor.nextObject callback
     return
 
   # Rewind cursor to beginning.
   rewind: ->
-    if @cursor
-      @cursor.rewind()
+    if @_cursor
+      @_cursor.rewind()
     return
 
   close: ->
-    if @cursor
-      @cursor.close()
+    if @_cursor
+      @_cursor.close()
     return
 
 
@@ -300,14 +349,14 @@ class Scope
   # Example:
   #   connect().find("posts", author_id: id).count (err, count)->
   count: (callback)->
-    @collection.count @selector, callback
+    @_collection.count @_selector, callback
 
   # Passes distinct values callback.
   #
   # Example:
   #   connect().find("posts").distinct "author_id", (err, author_ids)->
   distinct: (key, callback)->
-    @collection.distinct key, @selector, callback
+    @_collection.distinct key, @_selector, callback
 
 
 

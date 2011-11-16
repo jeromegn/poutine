@@ -173,7 +173,7 @@ Here's a simple example:
 
     # Use the same TCP connection for insert and find.
     db.begin (end)->
-      db.insert "posts", { text: "Find me" }, (err, id)->
+      db.insert "posts", { title: "Find me" }, (err, id)->
         db.find("posts", id).one (err, post)->
           assert post
           end()
@@ -183,7 +183,7 @@ Alternatively, with one less callback:
 
     # Use the same TCP connection for insert and find.
     end = db.begin()
-    db.insert "posts", { text: "Find me" }, (err, id)->
+    db.insert "posts", { title: "Find me" }, (err, id)->
       db.find("posts", id).one (err, post)->
         assert post
         end()
@@ -277,15 +277,24 @@ You can chain `where` methods together to create more specific scopes.  For exam
     # Written today
     today = for_author.where(created_at: { $gt: (new Date).beginningOfDy() })
 
+You can also use chain methods to modify the query options, using any of the following methods:
 
-
-    query.where(...)   # Add more query criteria
     query.fields(...)  # Specify which fields to load
     query.asc(...)     # Sort by ascending order
     query.desc(...)    # Sort by descending order
     query.limit(n)     # Load at most n records
     query.skip(n)      # Skip the first n records
 
+For example:
+
+    posts.where(author_id: author._id).fields("title").desc("created_at").all (error, posts)->
+      titles = (post.title for post in posts)
+      console.log "Posts from newest to oldest:", titles
+
+The `field`, `asc` and `desc` methods accept a list of fields, either as multiple arguments, or an array.
+
+    query.count
+    query.distinct
     query.one
     query.all
     query.each
