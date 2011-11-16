@@ -360,3 +360,23 @@ argument.  For example:
     connect().find("posts").reduce ((total, post)-> total + post.body.length), (error, total)->
       console.log "Wrote #{total} characters"
 
+
+### Cursors
+
+You can also use a cursor to iterate over a query.  Call `next` to query and pass the next object to the callback.  When
+there are no more objects to read, it will pass `null` to the callback.  You can rewind the cursor by calling `rewind`
+and don't forget to close it by calling `close`.
+
+For example:
+
+    scope = connect().find("posts")
+    each = (error, post)->
+      if post
+        console.log post.title
+        scope.nextObject each
+      else
+        console.log "Done"
+        scope.close()
+    console.log "Finding ..."
+    scope.nextObject each
+

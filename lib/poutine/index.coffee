@@ -1,4 +1,5 @@
 { Database, Configuration } = require("./database")
+{ Model } = require("./model")
 MongoDB = require("mongodb")
 
 # Database configurations.  We use this to configure database access and then
@@ -45,3 +46,4 @@ connect = (name)->
 
 exports.connect = connect
 exports.configure = configure
+exports.Model = Model

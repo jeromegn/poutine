@@ -78,7 +78,7 @@ class Collection
     throw new Error("Callback required") unless callback instanceof Function
     if selector instanceof Array
       selector = { _id: { $in: selector } }
-    this.query selector, options, (error, cursor)=>
+    @_query selector, options, (error, cursor)=>
       return callback error if error
       # Retrieve next object and pass to callback.
       readNext = =>
@@ -162,8 +162,6 @@ class Collection
     return new Scope(this, selector)
 
 
-
-
   # -- Implementation details --
 
   # Passes error, collection and database to callback.
@@ -177,13 +175,8 @@ class Collection
         else
           callback null, collection, @_database
 
-
-
-
-  
-
   # Used internally to open a cursor for queries.
-  query: (selector, options, callback)->
+  _query: (selector, options, callback)->
     unless callback
       if options
         [callback, options] = [options, null]
@@ -344,6 +337,7 @@ class Scope
   distinct: (key, callback)->
     @_collection.distinct key, @_selector, callback
 
+
   # -- Transformation --
 
   # Passes each object to the mapping function, and passes the result to the
@@ -420,15 +414,16 @@ class Scope
         callback null, value
 
 
+  # -- Cursors --
 
   # Opens cursor and passes next result to query.  Passes null if there are no
   # more results.
   next: (callback)->
     if @_cursor
-      @_cursor.nextObject (error, object)=>
+      @_cursor.nextObject (error, object)->
         callback error, object
     else
-      @_collection.query @_selector, @_options, (error, @_cursor)=>
+      @_collection._query @_selector, @_options, (error, @_cursor)=>
         return callback error if error
         @_cursor.nextObject callback
     return

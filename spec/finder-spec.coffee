@@ -721,73 +721,40 @@ vows.describe("Queries").addBatch
             "should return reduced value": (length)->
               assert.equal length, 18
 
-    ###
+        # -- Test cursor --
 
-
- 
-    "Using cursor":
-      "find next":
-        topic: (connect)->
-          finder = connect.find("posts")
-          objects = []
-          takeNext = (error, object)=>
-            objects.push object
-            if object
-              finder.next takeNext
-            else
-              @callback null, objects
-          finder.next takeNext
-        "should call once for each post": (objects)->
-          assert.equal "Post 1", objects[0].text
-          assert.equal "Post 2", objects[1].text
-          assert.equal "Post 3", objects[2].text
-        "should call last with null": (objects)->
-          assert.equal 4, objects.length
-          assert.isNull objects[3]
-
-      ##
-      # Rewind is broken in connect 0.9.6-23
-      "rewind":
-        topic: (connect)->
-          finder = connect.find("posts").where(text: "Post 2")
-          objects = []
-          takeNext = (error, object)=>
-            objects.push object
-            if object
-              finder.next takeNext
-            else if objects.length == 2
-              finder.rewind()
-              finder.next takeNext
-            else
-              @callback null, objects
-          finder.next takeNext
-        "should rewind on query results": (objects)->
-          assert.equal "Post 2", objects[0].text
-          assert.isNull objects[1]
-          assert.equal "Post 2", objects[2].text
-          assert.isNull objects[3]
-      ##
-
-
-    ###
+        "with cursor":
+          "find next":
+            topic: ->
+              scope = connect().find("posts")
+              posts = []
+              each = (error, post)=>
+                if post
+                  posts.push post
+                  scope.next each
+                else
+                  scope.close()
+                  @callback null, posts
+              scope.next each
+            "should call once for each post": (posts)->
+              assert.equal posts.length, 3
+          "rewind":
+            topic: ->
+              scope = connect().find("posts").where(title: "Post 2")
+              posts = []
+              each = (error, post)=>
+                if post
+                  posts.push post
+                  scope.next each
+                else if posts.length == 1
+                  scope.rewind()
+                  scope.next each
+                else
+                  scope.close()
+                  @callback null, posts
+              scope.next each
+            "should call once for each post": (posts)->
+              assert.equal posts.length, 2
    
-    
-  
-    # -- Test somet of these methods, using models --
-
-    ###
-    "model":
-
-      "database find with callback":
-        topic: ->
-          connect().find Post, { author_id: 1 }, @callback
-        "should return all posts": (posts)->
-          assert.equal posts.length, 2
-          for post in posts
-            assert.equal post.author_id, 1
-        "should construct models": (posts)->
-          for post in posts
-            assert post instanceof Post
-    ###
 
 .export(module)

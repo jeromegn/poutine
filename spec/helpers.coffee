@@ -1,7 +1,7 @@
-{ connect, configure } = require("../lib/poutine")
+{ connect, configure, Model } = require("../lib/poutine")
 
 # Configure default database.
-configure "poutine-test", pool: 1
+configure "poutine-test", pool: 10
 
 
 { Db, Server } = require("mongodb")
@@ -36,3 +36,4 @@ exports.setup = (fixtures, callback)->
 
 
 exports.connect = connect
+exports.Model = Model
