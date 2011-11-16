@@ -10,7 +10,7 @@ class Collection
   # If the last argument is a callback, load all matching objects and pass them
   # to callback.  Callback receives error, objects and connection.
   #
-  # Without callback, returns a new Query object.
+  # Without callback, returns a new Scope object.
   #
   # The first argument is optional and specifies the query selector.  You can
   # also pass an array of identifier to return specific objects, or a single
@@ -48,14 +48,45 @@ class Collection
       else
         return this.where(selector).extend(options)
 
-  # Returns a Query on this collection.
+  # Passes number of records in this query to callback.
+  #
+  # If called with single argument (callback), counts all objects in the
+  # collection.
+  count: (selector, callback)->
+    unless callback
+      [callback, selector] = [selector, null]
+    throw new Error("Callback required") unless callback instanceof Function
+    @_connect (error, collection, database)=>
+      return callback error if error
+      collection.count selector || {}, (error, count)=>
+        database.end()
+        callback error, count, database
+    return
+
+  # Passes distinct values to callback.
+  #
+  # If called with two arguments (key and callback), finds all distinct values
+  # in the collection.   With three arguments, only looks at objects that match
+  # the selector.
+  distinct: (key, selector, callback)->
+    unless callback
+      [callback, selector] = [selector, null]
+    throw new Error("Callback required") unless callback instanceof Function
+    @_connect (error, collection, database)=>
+      return callback error if error
+      collection.distinct key, selector || {},  (error, count)=>
+        database.end()
+        callback error, count, database
+    return
+
+  # Returns a Scope on this collection.
   #
   # Example:
   #   my_posts = connect().find("posts").where(author_id: me._id).desc("created_at")
   #   my_posts.count (err, count, db)->
   #     console.log "I wrote #{count} posts"
   where: (selector)->
-    return new Query(this, selector)
+    return new Scope(this, selector)
 
 
 
@@ -128,37 +159,6 @@ class Collection
       else
         callback null, objects, @database
 
-  # Passes number of records in this query to callback.
-  #
-  # If called with single argument (callback), counts all objects in the
-  # collection.
-  count: (selector, callback)->
-    unless callback
-      [callback, selector] = [selector, null]
-    throw new Error("Callback required") unless callback instanceof Function
-    @_connect (error, collection, database)=>
-      return callback error if error
-      collection.count selector || {}, (error, count)=>
-        database.end()
-        callback error, count, database
-    return
-
-  # Passes distinct values to callback.
-  #
-  # If called with two arguments (key and callback), finds all distinct values
-  # in the collection.   With three arguments, only looks at objects that match
-  # the selector.
-  distinct: (key, selector, callback)->
-    unless callback
-      [callback, selector] = [selector, null]
-    throw new Error("Callback required") unless callback instanceof Function
-    @_connect (error, collection, database)=>
-      return callback error if error
-      collection.distinct key, selector || {},  (error, count)=>
-        database.end()
-        callback error, count, database
-    return
-
 
   
 
@@ -202,7 +202,7 @@ class Collection
 # For example, to find 50 posts and only return their text:
 #
 #   connect().find("posts", author_id: authpor._id).fields("text").limit(50).all (err, posts, db)->
-class Query
+class Scope
   constructor: (@collection, @selector, @options)->
 
   # Refines query selector.
@@ -216,7 +216,7 @@ class Query
       combined[k] = v for k, v of @selector
     if selector
       combined[k] = v for k, v of selector
-    return new Query(@collection, combined, @options)
+    return new Scope(@collection, combined, @options)
 
   # Instructs query to return only named fields.
   #
@@ -247,7 +247,7 @@ class Query
       combined[k] = v for k,v of @options
     if options
       combined[k] = v for k,v of options
-    return new Query(@collection, @selector, combined)
+    return new Scope(@collection, @selector, combined)
 
 
   # Passes object to callback.

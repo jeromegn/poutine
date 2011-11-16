@@ -1,5 +1,6 @@
 ## How Poutine Is Better
 
+
 ### A Better Driver API
 
 The MongoDB driver exposes all the features and complexities of the
@@ -188,29 +189,95 @@ Alternatively, with one less callback:
         end()
 
 
+## Queries
 
-## Working With Collections
+You can query the connection directly by using methods like `find`, `count` and `distinct`.  These methods take a
+collection name/model as the first argument.  The same methods are also available on a collection.
 
-Almost everything you do with a MongoDB connection is related to one
-collection or another.
+### Loading Objects
 
-To access a collection, call the `collection()` method with collection
-name or model.  We'll talk about models later on.  For example:
+To load a single object by ID, call `find` with that ID.  For example:
+
+    connect().find "posts", post_id, (error, post)->
+      if post
+        console.log "Found post"
+      else
+        console.log "No such post"
+      
+You can also load multiple objects by passing an array of IDs.  For example:
+
+    connect().find "posts", [id1, id2], (error, posts)->
+      console.log "Found #{posts.length} posts"
+
+To find objects by any other properties, use a query selector.  For example:
+
+    connect().find "posts", author_id: author._id, (error, posts)->
+      console.log "Found #{posts.length} posts by #{author.name}"
+
+You can also pass query options as the third argument.  For example:
+
+    connect().find "posts", { author_id: author._id }, fields: ["title"], (error, posts)->
+      console.log "Found #{posts.length} posts by #{author.name}"
+
+The callback receives three arguments.  If an error occurs, the first argument is the error.  If successful, the first
+argument is null, the second argument is either the object or objects you're querying, and the last argument is a
+reference to the database connection.
+
+If you call `find` without a callback, it returns a `Scope` object that you can further refine.  We'll talk about
+queries in a moment.
+
+The same method is available on a collection.  For example:
 
     posts = connect().collection("posts")
-    posts.count (error, count)->
-      console.log("There are " + count + " posts")
+    posts.find author_id: author._id, (error, posts)->
+      console.log "Found #{posts.length} posts by #{author.name}"
 
-Once you have a collection you can do a lot of interesting things.  For
-example, you can find objects that are part of that collection:
+### Counting Objects
 
-    posts.where(author_id: author._id).each (err, post, db)->
+You can count how many objects are in a given collection by calling `count`, with or without a selector. For example:
 
-The `where` method creates a new query from a single argument that
-specifies the query criteria.
+    connect().count "posts", (error, count)->
+      console.log "There are #{count} posts"
 
-Queries are chained objects, so you can keep refining the query before
-finally executing it:
+    connect().count "posts", author_id: author._id, (error, count)->
+      console.log "There are #{count} posts by #{author.name}"
+
+As with `find`, these methods are also available on a collection.  Unlike `find`, a callback is required.  For example:
+
+    posts.count (error, posts)->
+      console.log "There are #{count} posts"
+
+### Distinct Values
+
+You can retrieve distinct values from a set of objects using `distinct`, with or without a selector.  The `distinct`
+method requires a field name and provides an array of values.  For example:
+
+    connect().distinct "posts", "author_id", (error, author_ids, db)->
+      db.find "authors", author_ids, (error, authors)->
+        names = (author.name for author in authors)
+        console.log "Post authored by #{name.join(", ")}"
+
+As with `find`, these methods are also available on a collection.  Unlike `find`, a callback is required.  For example:
+
+    posts.distinct "date", author_id: author._id, (error, dates)->
+      console.log "#{author.name} posted on #{dates.join(", ")}"
+
+### Queries
+
+The `Scope` object allows you to refine the query using chained methods calls, and to retrieve objects in a variety of
+different ways.
+
+You can get a `Scope` object by calling the `find` method with no callback, or by calling `where` on the collection.
+You can chain `where` methods together to create more specific scopes.  For example:
+
+    # All posts
+    posts = connect().find("posts")
+    # For specific author
+    for_author = posts.where(author_id: author._id)
+    # Written today
+    today = for_author.where(created_at: { $gt: (new Date).beginningOfDy() })
+
+
 
     query.where(...)   # Add more query criteria
     query.fields(...)  # Specify which fields to load
@@ -219,5 +286,10 @@ finally executing it:
     query.limit(n)     # Load at most n records
     query.skip(n)      # Skip the first n records
 
-
+    query.one
+    query.all
+    query.each
+    query.map
+    query.filter
+    query.reduce
 

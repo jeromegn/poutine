@@ -133,7 +133,7 @@ class Database extends EventEmitter
   # If the last argument is a callback, load all matching objects and pass them
   # to callback.  Callback receives error, objects and connection.
   #
-  # Without callback, returns a new Query object.
+  # Without callback, returns a new Scope object.
   #
   # The first argument is the collection name.  Second argument is optional and
   # specifies the query selector.  You can also pass an array of identifier to
