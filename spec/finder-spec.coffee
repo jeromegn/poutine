@@ -454,7 +454,7 @@ vows.describe("Queries").addBatch
               titles = (post.title for post in posts)
               assert.deepEqual titles, ["Test 3", "Test 2", "Test 1"]
 
-        "combined order":
+        "combined asc, desc":
           topic: (scope)->
             connect().find("posts")
           "same order":
@@ -470,6 +470,35 @@ vows.describe("Queries").addBatch
               titles = (post.title for post in posts)
               assert.deepEqual titles, ["Test 2", "Test 1", "Test 3"]
 
+        "limit":
+          topic: (scope)->
+            scope = connect().find("posts")
+            scope.limit(1).all @callback
+          "should return specified number of objects": (posts)->
+            assert.equal posts.length, 1
+          "should return first results": (posts)->
+            titles = (post.title for post in posts)
+            assert.deepEqual titles, ["Test 1"]
+
+        "skip":
+          topic: (scope)->
+            scope = connect().find("posts")
+            scope.skip(1).all @callback
+          "should return specified number of objects": (posts)->
+            assert.equal posts.length, 2
+          "should skip first result": (posts)->
+            titles = (post.title for post in posts)
+            assert.deepEqual titles, ["Test 2", "Test 3"]
+
+        "limit, skip":
+          topic: (scope)->
+            scope = connect().find("posts")
+            scope.skip(1).limit(1).all @callback
+          "should return specified number of objects": (posts)->
+            assert.equal posts.length, 1
+          "should skip first result, return only one": (posts)->
+            titles = (post.title for post in posts)
+            assert.deepEqual titles, ["Test 2"]
     ###
     "Simple queries":
       "count":
@@ -583,42 +612,6 @@ vows.describe("Queries").addBatch
       ##
 
 
-    "find all":
-      "no query":
-        topic: (connect)->
-          connect.find("posts").all @callback
-        "should return all posts": (posts)->
-          assert.equal 3, posts.length
-        "should return all fields for each post": (posts)->
-          for post in posts
-            assert post._id
-            assert post.text
-            assert post.author_id
-      "with query":
-        topic: (connect)->
-          connect.find("posts", text: "Test 2").all @callback
-        "should return only selected posts": (posts)->
-          assert.equal 1, posts.length
-        "should return all fields for each post": (posts)->
-          assert.equal posts[0].text, "Test 2"
-      "some fields":
-        topic: (connect)->
-          connect.find("posts").fields("text").all @callback
-        "should return only these fields": (posts)->
-          for post in posts
-            assert post._id
-            assert post.text
-            assert.isUndefined post.author_id
-      "with limit":
-        topic: (connect)->
-          connect.find("posts").limit(2).all @callback
-        "should return limited set": (posts)->
-          assert.equal 2, posts.length
-      "with skip":
-        topic: (connect)->
-          connect.find("posts").skip(2).all @callback
-        "should return limited set": (posts)->
-          assert.equal 1, posts.length
     ###
    
     
