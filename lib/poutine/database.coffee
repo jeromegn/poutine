@@ -11,7 +11,7 @@ catch ex
 
 # Database configuration.  This is basically a wrapped around the Mongodb
 # driver, specifically it's Db object.
-class Configuration
+exports.Configuration = class Configuration
   constructor: (name, options = {})->
     @_pool = new Pool
       name:     name
@@ -38,7 +38,7 @@ class Configuration
 # new connection that you can use to access the database.
 #
 # Phytical connections are lazily initialized and pooled.
-class Database extends EventEmitter
+exports.Database = class Database extends EventEmitter
   constructor: (@_configuration)->
     @_collections = []
     @ObjectID = require("mongodb").BSONPure.ObjectID
@@ -149,8 +149,8 @@ class Database extends EventEmitter
   #    mongo().find "posts", id, (err, post, db)->
   #      . . .
   #
-  #    query = mongo().find("posts", author_id: author._id)
-  #    query.all (err, posts, db)->
+  #    scope = mongo().find("posts", author_id: author._id)
+  #    scope.all (err, posts, db)->
   #      . . .
   find: (name, selector, options, callback)->
     return @collection(name).find(selector, options, callback)
@@ -178,7 +178,3 @@ class Database extends EventEmitter
   #     . . .
   distinct: (name, key, selector, callback)->
     @collection(name).distinct key, selector, callback
-
-
-exports.Configuration = Configuration
-exports.Database = Database

@@ -3,7 +3,7 @@
 
 # Represents a collection and all the operation you can do on one.  Database
 # methods like find and insert operate through a collection.
-class Collection
+exports.Collection = class Collection
   constructor: (@name, @database, @model)->
 
   # -- Finders --
@@ -451,6 +451,3 @@ class Scope
     if @_cursor
       @_cursor.close()
     return
-
-
-exports.Collection = Collection
