@@ -1,6 +1,4 @@
-vows = require("vows")
-assert = require("assert")
-{ connect, setup, Model } = require("./helpers")
+{ assert, vows, connect, setup, Model } = require("./helpers")
 
 
 class Post extends Model
@@ -11,7 +9,7 @@ class Post extends Model
   @field "created_at", Date
 
 
-vows.describe("Model finder").addBatch
+vows.describe("Model query").addBatch
 
   # -- Model.find --
   

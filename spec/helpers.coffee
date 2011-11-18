@@ -1,10 +1,8 @@
 { connect, configure, Model } = require("../lib/poutine")
 { Db, Server } = require("mongodb")
 File = require("fs")
-vows = require("vows")
-
-
-vows.options.error = false
+exports.assert = require("assert")
+exports.vows = require("vows")
 
 
 # Configure default database.
