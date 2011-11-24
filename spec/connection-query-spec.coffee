@@ -186,4 +186,6 @@ vows.describe("Connection query").addBatch
       "should fail": (error)->
         assert error instanceof Error
 
+
+
 .export(module)

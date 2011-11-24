@@ -1,58 +1,57 @@
 { connect, configure, Model } = require("../lib/poutine")
 { Db, Server } = require("mongodb")
 File = require("fs")
-exports.assert = require("assert")
-exports.vows = require("vows")
+Path = require("path")
 
 
 # Configure default database.
 configure "poutine-test", pool: 10
 
 
-fixtures_loaded = false
-# Load fixtures and call callback.
-exports.setup = (callback)->
-  if fixtures_loaded
-    callback()
-    return
-
-  File.readFile "#{__dirname}/fixtures.json", (error, json)->
+# Load named fixture from a file in spec/fixtures
+loadFixture = (connection, name, callback)->
+  File.readFile "#{__dirname}/fixtures/#{name}.json", (error, json)->
     return callback error if error
     try
-      fixtures = JSON.parse(json)
+      records = JSON.parse(json)
     catch error
       callback error
       return
 
+    connection.collection name, (error, collection)->
+      return callback error if error
+      collection.remove {}, safe: true, (error)->
+        return callback error if error
+        for record in records
+          collection.insert record
+        connection.lastError ->
+          callback()
+
+# Load the named fixtures from files in spec/fixtures
+loadFixtures = (connection, names, callback)->
+  if name = names[0]
+    loadFixture connection, name, (error)->
+      return callback error if error
+      loadFixtures connection, names.slice(1), callback
+  else
+    callback null
+
+# Delete collections and load fixtures.
+setup = (callback)->
+  if setup.loaded
+    callback()
+  else
     db = new Db("poutine-test", new Server("127.0.0.1", 27017), {})
     db.open (error, connection)->
       return callback error if error
-
-      nextRecord = (collection, collections, records)->
-        record = records[0]
-        if record
-          collection.insert record, (error, docs)->
-            return callback error if error
-            nextRecord collection, collections, records.slice(1)
-        else
-          nextCollection collections
-
-      nextCollection = (names)->
-        name = names[0]
-        if name
-          connection.collection name, (error, collection)->
-            return callback error if error
-            collection.remove {}, safe: true, (error, callback)->
-              return callback error if error
-              nextRecord collection, names.slice(1), fixtures[name]
-        else
-          db.lastError (error)->
-            fixtures_loaded = !error
-            callback error
-
-      nextCollection Object.keys(fixtures)
+      names = File.readdirSync("#{__dirname}/fixtures").map((name)-> Path.basename(name, ".json"))
+      loadFixtures connection, names, (error)->
+        setup.loaded = true unless error
+        callback error
 
 
-
+exports.assert = require("assert")
 exports.connect = connect
+exports.setup = setup
+exports.vows = require("vows")
 exports.Model = Model

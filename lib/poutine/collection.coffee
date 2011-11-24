@@ -69,7 +69,7 @@ exports.Collection = class Collection
         database.end()
         if @model && object
           try
-            object = Model.instantiate(@model, object)
+            object = Model.lifecycle.load(@model, object)
           catch error
             callback error
             return
@@ -99,19 +99,20 @@ exports.Collection = class Collection
             cursor.close()
             callback error
           else
-            if @model && object
-              try
-                object = Model.instantiate(@model, object)
-              catch error
-                callback error
-                cursor.close()
-                return
-            callback null, object
-            # Use nextTick to avoid stack overflow on large result sets.
             if object
+              if @model
+                try
+                  object = Model.lifecycle.load(@model, object)
+                catch error
+                  callback error
+                  cursor.close()
+                  return
+              callback null, object
+              # Use nextTick to avoid stack overflow on large result sets.
               process.nextTick readNext
             else
               cursor.close()
+              callback null
       readNext()
     return
 

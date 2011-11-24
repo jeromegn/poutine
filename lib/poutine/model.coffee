@@ -30,21 +30,25 @@ exports.Model = class Model
   @find: (selector, options, callback)->
     connect().find(this, selector, options, callback)
 
+  # Defines a field.
+  @field: (name, type)->
+    @fields ||= {}
+    @fields[name] = type || Object
+    private = "_#{name}"
+    @prototype.__defineGetter__ name, ->
+      this._[name] if this._
+    @prototype.__defineSetter__ name, (value)->
+      this._ ||= {}
+      this._[name] = value
+
+
+Model.lifecycle =
   # Used to instantiate a new instance from a loaded object.
-  @instantiate: (model, values)->
+  load: (model, values)->
     instance = new model(values)
-    # Use assign method if defined, otherwise copy fields.
-    if instance.assign instanceof Function
-      instance.assign(values)
-    else
-      for name, type of model.fields
-        instance[name] = values[name]
-    # Call onLoad handler if defined.
-    if instance.onLoad instanceof Function
-      instance.onLoad()
+    instance._ = values
+    # Call afterLoad handler if defined.
+    if instance.afterLoad instanceof Function
+      instance.afterLoad()
     return instance
 
-  # Defines a field.
-  @field: (name)->
-    @fields ||= {}
-    @fields[name] = true

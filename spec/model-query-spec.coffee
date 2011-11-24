@@ -145,7 +145,7 @@ vows.describe("Model query").addBatch
           scope.one @callback
       "should return Post object": (post)->
         assert.instanceOf post, Post
-      "should return a single post": (post)->
+      "should return the selected post": (post)->
         assert.equal post.title, "Post 1"
         
 
@@ -162,91 +162,74 @@ vows.describe("Model query").addBatch
 .addBatch
 
 
-  # -- Model finder callbacks --
-  
-  "load":
+  # -- Model loading --
+
+  "default accessor":
     topic: ->
-      setup @callback
-    
-    "one":
-      topic: ->
-        connect().find(Post).one @callback
-      "should load object": (post)->
-        assert post instanceof Post
-      "should load fields": (post)->
-        assert post.title
-        assert post.author_id
-        assert post.created_at
+      setup =>
+        Post.find(title: "Post 2").one @callback
+    "should return field value": (post)->
+      assert.equal post.title, "Post 2"
+    "should set field value": (post)->
+      post.title = "modified"
+      assert.equal post.title, "modified"
 
-    "all":
-      topic: ->
-        connect().find(Post).all @callback
-      "should load object": (posts)->
-        for post in posts
-          assert post instanceof Post
-      "should load fields": (posts)->
-        for post in posts
-          assert post.title
-          assert post.author_id
-          assert post.created_at
+  "custom accessor":
+    topic: ->
+      setup =>
+        class Custom extends Model
+          @collection = "posts"
+          @field "title"
+        Custom.prototype.__defineSetter__ "title", (title)->
+          @x_title = "!#{title}!"
+        Custom.find(title: "Post 2").one @callback
+        @Custom = Custom
+    "should not be used to load field value": (post)->
+      assert !post.x_title
+      # Proves that setting post.title does set post.x_title
+      post = new @Custom
+      post.title = "Post 2"
+      assert.equal post.x_title, "!Post 2!"
 
-    "undefined fields":
-      topic: ->
-        class Assign extends Model
+  "some fields":
+    topic: ->
+      setup =>
+        class Missing extends Model
           @collection: "posts"
           @field "title"
           @field "created_at"
-        connect().collection(Assign).one @callback
-      "should not be loaded": (post)->
-        assert post.title
-        assert post.created_at
-        assert !post.author_id
+        Missing.find(title: "Post 2").one @callback
+    "should load defined fields": (post)->
+      assert post.title
+      assert post._.created_at
+    "should not load undefined fiels": (post)->
+      assert !post.author_id
+      assert !post._.category
 
-    "custom assignment":
-      topic: ->
-        class Assign
+  "afterLoad":
+    topic: ->
+      setup =>
+        class AfterLoad extends Model
           @collection: "posts"
-          assign: (values)->
-            @title = values.title + "!"
-        connect().collection(Assign).one @callback
-      "should call assign method": (post)->
-        assert.equal post.title, "Post 1!"
-      "should not set other fields": (post)->
-        assert !post.author_id
-
-    "failed assignment":
-      topic: ->
-        class Failed
+          @field "title"
+          afterLoad: ->
+            @loaded = @title
+        AfterLoad.find(title: "Post 2").one @callback
+    "should call onLoad method after assigning fields": (post)->
+      assert.equal post.loaded, "Post 2"
+  
+  "failed afterLoad":
+    topic: ->
+      setup =>
+        class Failed extends Model
           @collection: "posts"
-          assign: (values)->
+          @field "title"
+          afterLoad: ->
             throw "Fail!"
-        connect().collection(Failed).all (error, posts)=>
+        Failed.find(title: "Post 2").one (error)=>
           @callback null, error
-      "should pass error to callback": (error)->
-        assert.equal error, "Fail!"
-
-    "onLoad":
-      topic: ->
-        class Assign
-          @collection: "posts"
-          @fields:
-            title: String
-          onLoad: ->
-            @loaded = true if @title
-        connect().collection(Assign).one @callback
-      "should call onLoad method after assigning fields": (post)->
-        assert post.loaded
-
-    "failed onLoad":
-      topic: ->
-        class Failed
-          @collection: "posts"
-          onLoad: (values)->
-            throw "Fail!"
-        connect().collection(Failed).all (error, posts)=>
-          @callback null, error
-      "should pass error to callback": (error)->
-        assert.equal error, "Fail!"
+    "should pass error to callback": (error)->
+      assert.equal error, "Fail!"
 
 
 .export(module)
