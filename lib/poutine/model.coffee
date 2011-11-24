@@ -3,6 +3,7 @@
 
 assert = require("assert")
 connect = require("./connect").connect
+{ BSONPure } = require("mongodb")
 
 
 # Use this class to easily define model classes that can be loaded and saved by Poutine.
@@ -22,6 +23,9 @@ connect = require("./connect").connect
 class Model
 
   # -- Schema --
+ 
+  # ObjectID class.
+  @ObjectID = BSONPure.ObjectID
 
   # Sets or returns the collection name (the collection_name property).
   #
@@ -31,6 +35,7 @@ class Model
   #
   #   console.log Port.collection()
   @collection: (name)->
+    @lifecycle.prepare this
     if name
       @collection_name = name
     else
@@ -55,11 +60,12 @@ class Model
   #     console.log user.name
   @field: (name, type)->
     assert name, "Missing field name"
+    @lifecycle.prepare this
     @fields ||= {}
     @fields[name] = type || Object
     private = "_#{name}"
     @prototype.__defineGetter__ name, ->
-      this._[name] if this._
+      this._?[name]
     @prototype.__defineSetter__ name, (value)->
       this._ ||= {}
       this._[name] = value
@@ -142,6 +148,16 @@ Model.lifecycle =
     if instance.afterLoad instanceof Function
       instance.afterLoad()
     return instance
+
+  # Need to call this at least once per model.  Takes care of defining accessors for _id, ...
+  prepare: (model)->
+    unless model._id
+      model.prototype.__defineGetter__ "_id", ->
+        this._?._id
+      model.prototype.__defineSetter__ "_id", (id)->
+        this._ ||= {}
+        this._._id = id
+
 
 
 exports.Model = Model

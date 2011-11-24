@@ -1,7 +1,7 @@
-## How Poutine Is Better
+# Killing It With Poutine
 
 
-### A Better Driver API
+## A Better Driver API
 
 The MongoDB driver exposes all the features and complexities of the MongoDB API.  For example, to run a simple query you
 need to initialize a Server object and a Db object.
@@ -47,24 +47,64 @@ Other operations work the same way.  You can perform them directly on the connec
 easier composition.
 
 
-### We've Got Models Too
+## KISS Models
 
-Naturally.
+Naturally.  And we've got a particular opinion on how to best use them.
 
-You can get a lot done by loading and storing Plain Old JavaScript Objects, and we structured Poutine so you can use
-POJOs often.  Then again, quite often you'll want your objects to contain more logic: accessors, validation,
-before/after hooks, dirty fields, and such.  That is where model classes come in.
+Models can, and sometimes do, abstract the underlying database in ways that hurt you, and so we opted to create an API
+that is just as easy to use with models as it is with Plain Old JavaScript Objects.  We want to give you the option to
+use both, and make it particularly easy to mix both in the same code base.
 
-Defining a model is as simple as writing a class, specifying a collection and defining fields:
+Finders, scopes and much of the API you'll read about in details soon can be used the same way, whether you're asking it
+to load a plain JavaScript object, a Poutine model or your own hybrid class.
+
+We kept the API simple by using class functions to mix logic and meta-data within the same class definition.  This
+allows you to define a field, add an index, write accessor functions and related methods, all in consecutive lines.  In
+our experience, this makes model definition much cleaner and easier to maintain.
+
+We kept the API clean by only including methods you would use in the Model class.  Poutine needs a lot more lifecycle
+methods to manage models and give you all those features, but we keep those in separate namespace.  Having a base class
+with hundreds of implementation methods is an anti-pattern we don't like.
+
+Last, at minimum a model is just a constructor with two properties: `collection_name` and `fields`.  If you don't like
+Poutine's `Model` class, don't use it.  Write your own code.  We'll stay out of the way, but still do the heavy lifting
+for you.
+
+Time to walk the walk.  Here's a model example:
 
     class User extends Model
-      field "name", String
+      @collection "users"
 
-      field "password", String
-      set 
+      @field "name", String
 
-      field "email", String
+      @field "password", String
+      @set "password", (clear)->
+        @_.password = crypt(clear)
 
+      @field "email", String
+
+      @get "posts", ->
+        Post.where(author_id: @_id)
+
+
+Each model is associated with a single collection, specified by the `collection_name` property.  You can use the
+`Model.collection` method to set the collection name.
+
+Only defined fields are loaded and saved.  A field definition requires a name and optional type.  Fields are loaded into
+the property `_` (underscore).  When you define a field by calling `field`, Poutine adds getter and setter functions
+for you, but you can always write your own accessors.
+
+In the example above we define a setter that takes a clear-text password and sets the internal field value to be salted
+and encrypted.
+
+Let's look at a simple example for working with models:
+
+    # me is a scope
+    me = User.where(name: "Assaf")
+    me.one (error, user)->
+      console.log "Loaded #{user.name}"
+      user.posts.count (error, count)->
+        console.log "Published #{count} posts"
 
 
 ## Working With The Database
@@ -72,12 +112,10 @@ Defining a model is as simple as writing a class, specifying a collection and de
 
 ### Configuring Database Access
 
-You use the `connect` function to obtain a new `Database` object,
-representing a logical database connection.
+You use the `connect` function to obtain a new `Database` object, representing a logical database connection.
 
-You can call `connect()` with a database name, in which case it will
-return a database connection based on the named configuration, or with
-no arguments, in which case it will return the default configuration.
+You can call `connect()` with a database name, in which case it will return a database connection based on the named
+configuration, or with no arguments, in which case it will return the default configuration.
 
 To create a database configuration, use `configure()`.  For example:
 
@@ -86,12 +124,10 @@ To create a database configuration, use `configure()`.  For example:
     connect().count "posts", (err, count, db)->
       console.log "There are #{count} posts in the database"
 
-Poutine picks the first configuration as the default configuration,
-making it easy to work with a single configuration.
+Poutine picks the first configuration as the default configuration, making it easy to work with a single configuration.
 
-Another common case is having one configuration per environment, and
-then using the configuration suitable for the current environment.  For
-example:
+Another common case is having one configuration per environment, and then using the configuration suitable for the
+current environment.  For example:
 
     configure = require("poutine").configure
     configure "development", name: "myapp", host: "127.0.0.1"
@@ -123,61 +159,47 @@ The JSON configuration document would look like this:
     }
 
 
-## Life With Connections
+## Managing Connections
 
-Mostly it's just works out, but you still need to understand what to do
-to handle special cases.
+(This is heavy and we won't get offended if you skip this section for now and come back to it later, when you need to
+worry about scaling and concurrency)
 
-MongoDB uses one thread per TCP connection.  That should tell you two
-things.  First, if your application opens and uses a single connection,
-all the workload will be serialized in a single thread.  You won't get a
-lot of scalability that way.  If it's a Web server, you'll want each
-request to be using its own connection.
+Mostly it's just works out, but you still need to understand what to do to handle special cases.
 
-Second, if your application keeps opening and closing connections,
-there's a lot of overhead involved in establishing these connections,
-both TCP overhead and threads.  You want to reuse connections through
-some pooling mechanism.
+MongoDB uses one thread per TCP connection.  That should tell you two things.  First, if your application opens and uses
+a single connection, all the workload will be serialized in a single thread.  You won't get a lot of scalability that
+way.  If it's a Web server, you'll want each request to be using its own connection.
 
-Poutine solves this by allowing you to open as many logical connections
-as you want, but using a pool of TCP connections to handle those
-requests.  Whenever you do an operation, like insert or query, it grabs
-a connection from the pool, performs that operation, and then returns
-the connection back to the pool.
+Second, if your application keeps opening and closing connections, there's a lot of overhead involved in establishing
+these connections, both TCP overhead and threads.  You want to reuse connections through some pooling mechanism.
 
-That means that all you need to do is grab a connection and use it.  You
-can use one connection throughout the application (but read below why
-it's not such a good idea), or grab a new connection for each request.
-You don't have to worry about closing the connection, the logical
-connection is just a wrapper, and the TCP connections are pooled.
+Poutine solves this by allowing you to open as many logical connections as you want, but using a pool of TCP connections
+to handle those requests.  Whenever you do an operation, like insert or query, it grabs a connection from the pool,
+performs that operation, and then returns the connection back to the pool.
 
-And this works flawlessly for most things you do, but there are a couple
-of exceptions.  Say you're inserting a record into the database and then
-using the same logical connection to query the database.  By default
-Poutine grabs a TCP connection from the database for each of these
-operations.  It's possible that the insert operation will not complete
-before the find operation is started and you won't be able to query the
-object you just created.
+That means that all you need to do is grab a connection and use it.  You can use one connection throughout the
+application (but read below why it's not such a good idea), or grab a new connection for each request.  You don't have
+to worry about closing the connection, the logical connection is just a wrapper, and the TCP connections are pooled.
 
-There are two ways around this.  You can insert safely, which blocks
-until the insert operation completes.  Or you can tell Poutine to reuse
-the same TCP connection.
+And this works flawlessly for most things you do, but there are a couple of exceptions.  Say you're inserting a record
+into the database and then using the same logical connection to query the database.  By default Poutine grabs a TCP
+connection from the database for each of these operations.  It's possible that the insert operation will not complete
+before the find operation is started and you won't be able to query the object you just created.
 
-Another scenario is using replica sets where each TCP connection may
-read from a different slave.  It takes slaves some time to replicate, so
-it's possible that one query will hit one server and find an object, but
-another query will hit a different server and not find the very same
-object.  Again, you can solve that by telling Poutine to reuse the same
-TCP connection.
+There are two ways around this.  You can insert safely, which blocks until the insert operation completes.  Or you can
+tell Poutine to reuse the same TCP connection.
 
-You do that by calling `begin` and `end`.  Calling `begin` fixes the TCP
-connection, so all subsequent operations on that connection object will
-use the same TCP connection.  You must follow up with a call to `end`,
-otherwise the TCP connection is not available for other requests.
+Another scenario is using replica sets where each TCP connection may read from a different slave.  It takes slaves some
+time to replicate, so it's possible that one query will hit one server and find an object, but another query will hit a
+different server and not find the very same object.  Again, you can solve that by telling Poutine to reuse the same TCP
+connection.
 
-There's reference tracking, so if you're passing the connection to
-another function that calls `begin` followed by `end`, the connection
-doesn't get released on you.
+You do that by calling `begin` and `end`.  Calling `begin` fixes the TCP connection, so all subsequent operations on
+that connection object will use the same TCP connection.  You must follow up with a call to `end`, otherwise the TCP
+connection is not available for other requests.
+
+There's reference tracking, so if you're passing the connection to another function that calls `begin` followed by
+`end`, the connection doesn't get released on you.
 
 Here's a simple example:
 
@@ -391,23 +413,38 @@ For example:
     scope.next each
 
 
-### Assigning After Loading
+### Model Finders
 
-If a model defines a method called `assign`, that method is called after the model instance is created to set its
-properties from the loaded object.  Otherwise, all defined fields are set.
+You can use `find` and `where` directly with a model class, for example:
 
-If the model defines a method called `onLoad`, that method is called after the properties are set.
+    me = User.where(name: "Assaf")
+    me.one (error, user)->
+      console.log "Loaded #{user.name}"
+    User.find post.author_id, (error, user)->
+      console.log "Loaded #{user.name}"
+
+You can also use any of the connection/collection finder methods with models, just pass a model class (constructor
+function) instead of collection name.  For example:
+
+    connect().find User, name: "Assaf", (error, user)->
+      console.log "Loaded #{user.name}"
+
+You can use either `Model.finder` or `find(Model)`, they both map to the same behavior.  The main difference is, your
+code may be easier to read if you use the `Model.finder` pattern, and you'll probably prefer to use it often.
+
+On the other hand, `Model.finder` may use a different TCP connection for each request.  If you need to use the same TCP
+connection (see `begin` and `end`), then you have to go through the connection/collection objects.
+
+
+### afterLoad
+
+If the model defines a method called `afterLoad`, that method is called after the properties are set.
 
 For example:
 
-    class TitleOnly extends Post
-      assign: (values)->
-        # Set title and load author, no other fields.
-        @title = values.title
-        @author = Author.find(values.author_id)
-
     class Post extends Model
-      onLoad: ->
+      field "author_id"
+      afterLoad: ->
         # All fields set, load associated object.
         @author = Author.find(@author_id)
 

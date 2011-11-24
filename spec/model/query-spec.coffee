@@ -174,6 +174,14 @@ vows.describe("Model query").addBatch
 
   # -- Model loading --
 
+  "ID accessor":
+    topic: ->
+      setup =>
+        Post.find(title: "Post 2").one @callback
+    "should return post ID": (post)->
+      assert post._id
+      assert.instanceOf post._id, Post.ObjectID
+
   "default accessor":
     topic: ->
       setup =>
