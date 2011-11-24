@@ -1,4 +1,4 @@
-{ assert, vows, connect, setup, Model } = require("./helpers")
+{ assert, vows, connect, setup, Model } = require("../helpers")
 
 
 class Post extends Model
@@ -183,13 +183,13 @@ vows.describe("Model query").addBatch
         Custom.prototype.__defineSetter__ "title", (title)->
           @x_title = "!#{title}!"
         Custom.find(title: "Post 2").one @callback
-        @Custom = Custom
+
+        # Proves that setting post.title does set post.x_title
+        post = new Custom
+        post.title = "Post 2"
+        assert.equal post.x_title, "!Post 2!"
     "should not be used to load field value": (post)->
       assert !post.x_title
-      # Proves that setting post.title does set post.x_title
-      post = new @Custom
-      post.title = "Post 2"
-      assert.equal post.x_title, "!Post 2!"
 
   "some fields":
     topic: ->

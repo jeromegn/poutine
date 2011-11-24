@@ -1,5 +1,6 @@
 { connect, configure, Model } = require("../lib/poutine")
 { Db, Server } = require("mongodb")
+{ EventEmitter } = require("events")
 File = require("fs")
 Path = require("path")
 
@@ -37,17 +38,27 @@ loadFixtures = (connection, names, callback)->
     callback null
 
 # Delete collections and load fixtures.
+loading = new EventEmitter
+loading.setMaxListeners 0
 setup = (callback)->
-  if setup.loaded
-    callback()
-  else
+  loading.once "loaded", callback
+
+  if loading.loaded
+    loading.emit "loaded"
+    return
+  if loading.listeners("loaded").length == 1
     db = new Db("poutine-test", new Server("127.0.0.1", 27017), {})
     db.open (error, connection)->
-      return callback error if error
+      if error
+        loading.emit "error", error
+        return
       names = File.readdirSync("#{__dirname}/fixtures").map((name)-> Path.basename(name, ".json"))
       loadFixtures connection, names, (error)->
-        setup.loaded = true unless error
-        callback error
+        if error
+          loading.emit "error", error
+        else
+          setup.loaded = true
+          loading.emit "loaded"
 
 
 exports.assert = require("assert")

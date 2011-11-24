@@ -1,4 +1,4 @@
-{ assert, vows, connect, setup } = require("./helpers")
+{ assert, vows, connect, setup } = require("../helpers")
 
 
 vows.describe("Cursor").addBatch
