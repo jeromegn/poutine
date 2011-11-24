@@ -1,12 +1,21 @@
 { "name": "poutine",
-  "version": "0.1.0",
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:assaf/poutine.git"
-  },
+  "description": "MongoDB object document mapper made of unicorns",
+  "version": "0.2.0",
+  "contributors": [
+    "Assaf Arkin <assaf@labnotes.org> (http://labnotes.org/)",
+    "Jerome Gravel-Niquet <jeromegn@gmail.com> (http://jgn.me/)"
+  ],
+  "keywords": [],
   "main": "./lib/poutine",
+  "directories": {
+    "doc": "./doc",
+    "lib": "./lib"
+  },
   "engines": {
-    "node": "~v0.5.10"
+    "node": "~v0.6.0"
+  },
+  "scripts": {
+    "test":   "vows --spec"
   },
   "dependencies": {
     "coffee-script":  "~1.1.3",
@@ -16,6 +25,17 @@
   },
   "devDependencies": {
     "vows":           "~0.5.13"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jeromegn/poutine"
+  },
+  "bugs": {
+    "url": "https://github.com/jeromegn/poutine/issues"
+  },
+  "licenses": [
+    { "type": "MIT",
+      "url": "https://github.com/jeromegn/poutine/blob/master/MIT-LICENSE"
+    }
+  ]
 }
-
