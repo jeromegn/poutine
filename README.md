@@ -3,21 +3,18 @@
 
 ### A Better Driver API
 
-The MongoDB driver exposes all the features and complexities of the
-MongoDB API.  For example, to run a simple query you need to initialize
-a Server object and a Db object.
+The MongoDB driver exposes all the features and complexities of the MongoDB API.  For example, to run a simple query you
+need to initialize a Server object and a Db object.
 
-From there, you can open a new connection.  You need a callback.  Next,
-you can get hold of a collection.  You need another callback.  Last, you
-can run a `find` operation.  That takes another callback.
+From there, you can open a new connection.  You need a callback.  Next, you can get hold of a collection.  You need
+another callback.  Last, you can run a `find` operation.  That takes another callback.
 
-APIs like that make us sad.  They're as powerful as they are verbose.
-So we decided to improve that using a combination of techniques.
+APIs like that make us sad.  They're as powerful as they are verbose.  So we decided to improve that using a combination
+of techniques.
 
-For starters, we're separating connection configuration from the act of
-acquiring and using a connection.  That allows you to configure all your
-connections in one place.  You may have multiple for different
-environments, e.g. development, test and production.
+For starters, we're separating connection configuration from the act of acquiring and using a connection.  That allows
+you to configure all your connections in one place.  You may have multiple for different environments, e.g. development,
+test and production.
 
 With Poutine you can write:
 
@@ -26,12 +23,10 @@ With Poutine you can write:
     configure "production", host: "db.jupiter", pool: 50
     configure.default = process.env.NODE_ENV
 
-Then, elsewhere in your application, access the right connection by
-calling the `connect` function.
+Then, elsewhere in your application, access the right connection by calling the `connect` function.
 
-Poutine gives you a chained API that makes everything easier, and will
-lazily acquire a pooled connection when you actually execute a command.
-So to find all posts by an author you could:
+Poutine gives you a chained API that makes everything easier, and will lazily acquire a pooled connection when you
+actually execute a command.  So to find all posts by an author you could:
 
     connect = require("poutine").connect
     posts = connect().collection("posts")
@@ -48,12 +43,27 @@ Of course, you can also go straight for the kill and do this:
     connect().find("posts", { author_id: author.id }, order: [["created_at", -1]], (error, posts, db)->
       ...
 
-Other operations work the same way.  You can perform them directly on
-the connection object, or use the chaining API for easier composition.
+Other operations work the same way.  You can perform them directly on the connection object, or use the chaining API for
+easier composition.
 
 
 ### We've Got Models Too
 
+Naturally.
+
+You can get a lot done by loading and storing Plain Old JavaScript Objects, and we structured Poutine so you can use
+POJOs often.  Then again, quite often you'll want your objects to contain more logic: accessors, validation,
+before/after hooks, dirty fields, and such.  That is where model classes come in.
+
+Defining a model is as simple as writing a class, specifying a collection and defining fields:
+
+    class User extends Model
+      field "name", String
+
+      field "password", String
+      set 
+
+      field "email", String
 
 
 

@@ -124,8 +124,8 @@ class Database extends EventEmitter
   collection: (name)->
     if name instanceof Function
       model = name
-      name = model.collection
-      assert name, "#{model.constructor}.collection is undefined, can't determine which collection to access"
+      name = model.collection_name
+      assert name, "#{model.constructor}.collection_name is undefined, can't determine which collection to access"
     @_collections[name] ||= new Collection(name, this, model)
 
   # Finds all objects that match the query selector.

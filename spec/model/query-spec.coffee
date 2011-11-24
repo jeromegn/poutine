@@ -2,7 +2,7 @@
 
 
 class Post extends Model
-  @collection: "posts"
+  @collection "posts"
 
   @field "title", String
   @field "author_id"
@@ -188,7 +188,7 @@ vows.describe("Model query").addBatch
     topic: ->
       setup =>
         class Custom extends Model
-          @collection = "posts"
+          @collection "posts"
           @field "title"
           @set "title", (title)->
             @x_title = "!#{title}!"
@@ -206,7 +206,7 @@ vows.describe("Model query").addBatch
     topic: ->
       setup =>
         class Missing extends Model
-          @collection: "posts"
+          @collection "posts"
           @field "title"
           @field "created_at"
         Missing.find(title: "Post 2").one @callback
@@ -221,7 +221,7 @@ vows.describe("Model query").addBatch
     topic: ->
       setup =>
         class AfterLoad extends Model
-          @collection: "posts"
+          @collection "posts"
           @field "title"
           afterLoad: ->
             @loaded = @title
@@ -233,7 +233,7 @@ vows.describe("Model query").addBatch
     topic: ->
       setup =>
         class Failed extends Model
-          @collection: "posts"
+          @collection "posts"
           @field "title"
           afterLoad: ->
             throw "Fail!"

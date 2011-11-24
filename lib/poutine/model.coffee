@@ -11,14 +11,87 @@ connect = require("./connect").connect
 #
 # Example:
 #   class User extends Poutine
-#     field "name", String
-#     field "password", String
-#     set "password", (clear)->
+#     @collection "users"
+#     @field "name", String
+#     @field "password", String
+#     @set "password", (clear)->
 #       _.password = encrypt(clear)
 #
 #   User.where(name: "Assaf").one (error, user)->
 #     console.log "Loaded #{user.name}"
 class Model
+
+  # -- Schema --
+
+  # Sets or returns the collection name (the collection_name property).
+  #
+  # Examples:
+  #   class Post extends Poutine
+  #     @collection "posts"
+  #
+  #   console.log Port.collection()
+  @collection: (name)->
+    if name
+      @collection_name = name
+    else
+      return @collection_name
+
+  # Defines a field and adds property accessors.
+  #
+  # First argument is the field name, second argument is the field type (optional).
+  #
+  # Only defined fields are loaded and saved.  Fields are loaded into the _ property, and accessors are defined to
+  # get/set the field value.  You can write your own accessors.
+  #
+  # Examples:
+  #   class User extends Poutine
+  #     @collection "users"
+  #     @field "name", String
+  #     @field "password", String
+  #     @set "password", (clear)->
+  #       _.password = encrypt(clear)
+  #
+  #   User.find().one (error, user)->
+  #     console.log user.name
+  @field: (name, type)->
+    assert name, "Missing field name"
+    @fields ||= {}
+    @fields[name] = type || Object
+    private = "_#{name}"
+    @prototype.__defineGetter__ name, ->
+      this._[name] if this._
+    @prototype.__defineSetter__ name, (value)->
+      this._ ||= {}
+      this._[name] = value
+
+  # Example:
+  #   class Post extends Poutine
+  #     @collection "posts"
+  #     @field "author", Author
+  #     @get "author", ->
+  #       @author ||= Author.find(@author_id)
+  #     @set "author", (@author)->
+  #       @author_id = @author?._id
+  @get: (name, getter)->
+    assert name, "Missing property name"
+    assert setter, "Missing getter function"
+    @prototype.__defineGetter__ name, getter
+
+  # Convenience method for adding a setter property accessor.
+  #
+  # Examples:
+  #   class User extends Poutine
+  #     @collection "users"
+  #     @field "password", String
+  #     @set "password", (clear)->
+  #       _.password = encrypt(clear)
+  @set: (name, setter)->
+    assert name, "Missing property name"
+    assert setter, "Missing setter function"
+    @prototype.__defineSetter__ name, setter
+
+
+  # -- Finders --
 
   # Finds all objects that match the query selector.
   #
@@ -55,57 +128,6 @@ class Model
   #     console.log "I wrote #{count} posts"
   @where: (selector)->
     connect().find(this, selector)
-
-  # Defines a field and adds property accessors.
-  #
-  # First argument is the field name, second argument is the field type (optional).
-  #
-  # Only defined fields are loaded and saved.  Fields are loaded into the _ property, and accessors are defined to
-  # get/set the field value.  You can write your own accessors.
-  #
-  # Examples:
-  #   class User extends Poutine
-  #     field "name", String
-  #     field "password", String
-  #     set "password", (clear)->
-  #       _.password = encrypt(clear)
-  #
-  #   User.find().one (error, user)->
-  #     console.log user.name
-  @field: (name, type)->
-    assert name, "Missing field name"
-    @fields ||= {}
-    @fields[name] = type || Object
-    private = "_#{name}"
-    @prototype.__defineGetter__ name, ->
-      this._[name] if this._
-    @prototype.__defineSetter__ name, (value)->
-      this._ ||= {}
-      this._[name] = value
-
-  # Example:
-  #   class Post extends Poutine
-  #     field "author", Author
-  #     get "author", ->
-  #       @author ||= Author.find(@author_id)
-  #     set "author", (@author)->
-  #       @author_id = @author?._id
-  @get: (name, getter)->
-    assert name, "Missing property name"
-    assert setter, "Missing getter function"
-    @prototype.__defineGetter__ name, getter
-
-  # Convenience method for adding a setter property accessor.
-  #
-  # Examples:
-  #   class User extends Poutine
-  #     field "password", String
-  #     set "password", (clear)->
-  #       _.password = encrypt(clear)
-  @set: (name, setter)->
-    assert name, "Missing property name"
-    assert setter, "Missing setter function"
-    @prototype.__defineSetter__ name, setter
 
 
 # Poutine uses these lifecycle methods to perform operations on models, but keeps them separate so we don't pollute the
