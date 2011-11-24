@@ -102,7 +102,6 @@ Poutine.Collection =
       process.emit "error", err if err
     this.connect (err, collection)->
       process.emit "error", err if err
-      console.log "Ensuring indexes in the collection #{collection.collectionName}"
       collection.ensureIndex fields, options, callback
 
   create: (fields, callback)->
@@ -131,7 +130,10 @@ Poutine.Collection =
       child: collection
 
   belongsTo: (collection) ->
-    # To implement
+    this.relations.push
+      type: "hasMany"
+      parent: collection
+      child: this
 
 Poutine.Document =
 
@@ -220,7 +222,10 @@ class Poutine.Model
         Object.defineProperty this, relation.child, {
           get: -> new Proxy.HasMany(this, relation.parent, relation.child)
         }
-        #this[relation.child] = new Proxy.HasMany(this, relation.parent, relation.child)
+      else if relation.type == "belongsTo"
+        Object.defineProperty this, relation.parent, {
+          get: -> new Proxy.BelongsTo(this, relation.parent, relation.child)
+        }
 
   @extend: (obj) ->
     for key, value of obj when key not in reservedKeywords
@@ -241,31 +246,31 @@ class Proxy
   constructor: (@doc, @parentModel, @childModel) ->
     if Object.isString(@parentModel)
       parentModel = "#{@parentModel}"
-      @parentModel = ->
-        Poutine.collections[parentModel]
-    else
-      @parentModel = -> @parentModel
+      Object.defineProperty this, 'parentModel', {
+        writable: true
+        get: -> Poutine.collections[parentModel]
+      }
     
     if Object.isString(@childModel)
       childModel = "#{@childModel}"
-      @childModel = ->
-        Poutine.collections[childModel]
-    else
-      @childModel = -> @childModel
+      Object.defineProperty this, 'childModel', {
+        writable: true
+        get: -> Poutine.collections[childModel]
+      }
 
   create: (fields, callback) ->
-    @childModel().create(fields, callback)
+    @childModel.create(fields, callback)
 
 class Proxy.HasMany extends Proxy
   constructor: (doc, parentModel, childModel) ->
     super(doc, parentModel, childModel)
     @field ||= @childModel().prototype.collection_name + "_ids"
     @remoteField ||= @doc.constructor.name.toLowerCase() + "_id"
-    @childModel().prototype.fields[@remoteField] ||= Array
+    @childModel.prototype.fields[@remoteField] ||= Array
     @doc.constructor.prototype.fields[@field] ||= ObjectID
 
-    #@childModel().index @remoteField
-    #@doc.constructor.index @field
+    @childModel.index @remoteField
+    @doc.constructor.index @field
 
     @doc[@field] ||= []
 
@@ -306,7 +311,7 @@ class Proxy.HasMany extends Proxy
       model[@remoteField] = @doc._id
       saveAll(model)
     else
-      @childModel().find(_id: oid).one (err, child) =>
+      @childModel.find(_id: oid).one (err, child) =>
         return callback(err) if err
         return callback(new Error("No record found with #{oid}")) if !child
         child[@remoteField] = @doc._id
@@ -314,9 +319,21 @@ class Proxy.HasMany extends Proxy
   
   find: (query = {}, options = {})->
     query[@remoteField] = @doc._id
-    finder.call @childModel(), query, options
+    finder.call @childModel, query, options
 
+class Proxy.BelongsTo extends Proxy
+  constructor: (doc, parentModel, childModel) ->
+    # Invert them to make sense... huh? :P
+    super(doc, childModel, parentModel)
+    @field ||= @childModel().prototype.collection_name + "_ids"
+    @remoteField ||= @doc.constructor.name.toLowerCase() + "_id"
+    @childModel().prototype.fields[@remoteField] ||= Array
+    @doc.constructor.prototype.fields[@field] ||= ObjectID
 
+    @childModel().index @remoteField
+    @doc.constructor.index @field
+
+    @doc[@field] ||= []
 
 Poutine.Proxy = Proxy
 
