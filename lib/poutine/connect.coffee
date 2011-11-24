@@ -1,3 +1,11 @@
+# The configure function is used to configure a database connection.
+#
+# The connect function is used to acquire logicl connection to a database.
+
+
+assert = require("assert")
+
+
 # Database configurations.  We use this to configure database access and then
 # get the driver instance (Db object).
 databases = {}
@@ -16,14 +24,15 @@ databases = {}
 #
 # You can also call this with an object, where each key is a database name, and
 # the corresponding value the database configuration.
-exports.configure = configure = (name, options)->
+configure = (name, options = {})->
+  assert name, "This function requires a database name"
   { Configuration } = require("./database")
   if name.constructor == Object
     configs = name
     for name, options of configs
       configure name, options
   else
-    throw "Already have configuration for #{name}" if databases[name]
+    assert !databases[name], "Already have configuration named #{name}"
     options ||= {}
     config = new Configuration(options.name || name, options)
     databases[name] = config
@@ -34,9 +43,13 @@ configure.default = null
 configure.DEFAULT = "development"
 
 # Provides access to the specified database (null for default database).
-exports.connect = connect = (name)->
+connect = (name)->
   { Database } = require("./database")
   name ||= configure.default || process.env.NODE_ENV || configure.DEFAULT
   unless databases[name]
     configure name
   return new Database(databases[name])
+
+
+exports.configure = configure
+exports.connect   = connect

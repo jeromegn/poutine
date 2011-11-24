@@ -1,3 +1,4 @@
+assert = require("assert")
 { Collection } = require("./collection")
 { Db, Server } = require("mongodb")
 { EventEmitter } = require("events")
@@ -11,7 +12,7 @@ catch ex
 
 # Database configuration.  This is basically a wrapped around the Mongodb
 # driver, specifically it's Db object.
-exports.Configuration = class Configuration
+class Configuration
   constructor: (name, options = {})->
     @_pool = new Pool
       name:     name
@@ -38,7 +39,7 @@ exports.Configuration = class Configuration
 # new connection that you can use to access the database.
 #
 # Phytical connections are lazily initialized and pooled.
-exports.Database = class Database extends EventEmitter
+class Database extends EventEmitter
   constructor: (@_configuration)->
     @_collections = []
     @ObjectID = require("mongodb").BSONPure.ObjectID
@@ -54,7 +55,7 @@ exports.Database = class Database extends EventEmitter
   # passes, error, a connection and a reference to the end method.  Don't forget
   # to call the end function once done with the connection.
   driver: (callback)->
-    throw new Error("Callback required") unless callback
+    assert callback instanceof Function, "This function requires a callback"
     end = @end.bind(this)
     # This is the TCP connection, which we use until it's returned to
     # the pool (see end method).
@@ -124,8 +125,7 @@ exports.Database = class Database extends EventEmitter
     if name instanceof Function
       model = name
       name = model.collection
-      unless name
-        throw new Error("No #{model.constructor}.collection, can't determine collection name")
+      assert name, "#{model.constructor}.collection is undefined, can't determine which collection to access"
     @_collections[name] ||= new Collection(name, this, model)
 
   # Finds all objects that match the query selector.
@@ -178,3 +178,7 @@ exports.Database = class Database extends EventEmitter
   #     . . .
   distinct: (name, key, selector, callback)->
     @collection(name).distinct key, selector, callback
+
+
+exports.Configuration = Configuration
+exports.Database      = Database

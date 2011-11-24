@@ -1,3 +1,6 @@
+# Basis for all Poutine models.
+
+
 assert = require("assert")
 connect = require("./connect").connect
 
@@ -105,6 +108,9 @@ class Model
     @prototype.__defineSetter__ name, setter
 
 
+# Poutine uses these lifecycle methods to perform operations on models, but keeps them separate so we don't pollute the
+# Model prototype with methods that are never used directly by actual model classes.  Inheriting from a class that has
+# hundreds of implementation methods is an anti-pattern we dislike.
 Model.lifecycle =
   # Used to instantiate a new instance from a loaded object.
   load: (model, values)->

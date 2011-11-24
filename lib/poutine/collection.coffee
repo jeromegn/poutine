@@ -1,9 +1,18 @@
+# Collection represents a MongoDB collection.
+#
+# Scope limits operations on a collection to particular records (based on query selector) and allows specifying query
+# and update options (e.g. fields, limit, sorting).
+#
+# Cursor represents a MongoDB cursor that can be used to retrieve one object at a time.
+
+
+assert = require("assert")
 { Model } = require("./model")
 
 
 # Represents a collection and all the operation you can do on one.  Database
 # methods like find and insert operate through a collection.
-exports.Collection = class Collection
+class Collection
   constructor: (@name, @database, @model)->
 
   # -- Finders --
@@ -62,7 +71,7 @@ exports.Collection = class Collection
         [callback, options] = [options, null]
       else
         [callback, selector] = [selector, null]
-    throw new Error("Callback required") unless callback instanceof Function
+    assert callback instanceof Function, "This function requires a callback"
     @_connect (error, collection, database)=>
       return callback error if error
       collection.findOne selector || {}, options || {}, (error, object)=>
@@ -87,7 +96,7 @@ exports.Collection = class Collection
         [callback, options] = [options, null]
       else
         [callback, selector] = [selector, null]
-    throw new Error("Callback required") unless callback instanceof Function
+    assert callback instanceof Function, "This function requires a callback"
     if selector instanceof Array
       selector = { _id: { $in: selector } }
     @_query selector, options, (error, cursor)=>
@@ -126,7 +135,7 @@ exports.Collection = class Collection
         [callback, options] = [options, null]
       else
         [callback, selector] = [selector, null]
-    throw new Error("Callback required") unless callback instanceof Function
+    assert callback instanceof Function, "This function requires a callback"
     objects = []
     @each selector, options, (error, object)=>
       return callback error if error
@@ -142,7 +151,7 @@ exports.Collection = class Collection
   count: (selector, callback)->
     unless callback
       [callback, selector] = [selector, null]
-    throw new Error("Callback required") unless callback instanceof Function
+    assert callback instanceof Function, "This function requires a callback"
     @_connect (error, collection, database)=>
       return callback error if error
       collection.count selector || {}, (error, count)=>
@@ -156,9 +165,10 @@ exports.Collection = class Collection
   # in the collection.   With three arguments, only looks at objects that match
   # the selector.
   distinct: (key, selector, callback)->
+    assert key, "This function requires a key as its first argument"
     unless callback
       [callback, selector] = [selector, null]
-    throw new Error("Callback required") unless callback instanceof Function
+    assert callback instanceof Function, "This function requires a callback"
     @_connect (error, collection, database)=>
       return callback error if error
       collection.distinct key, selector || {},  (error, count)=>
@@ -180,6 +190,7 @@ exports.Collection = class Collection
 
   # Passes error, collection and database to callback.
   _connect: (callback)->
+    assert callback instanceof Function, "This function requires a callback"
     @database.driver (error, connection, end)=>
       return callback error if error
       connection.collection @name, (error, collection)=>
@@ -196,6 +207,7 @@ exports.Collection = class Collection
         [callback, options] = [options, null]
       else
         [callback, selector] = [selector, null]
+    assert callback instanceof Function, "This function requires a callback"
     @_connect (error, collection, database)=>
       return callback error if error
       collection.find selector || {}, options || {}, (error, cursor)=>
@@ -281,6 +293,7 @@ class Scope
   # Example:
   #   first_ten = posts.limit(10)
   limit: (limit)->
+    assert limit, "This function requires limit as its first argument"
     return @extend(limit: limit)
 
   # Return records from specified offset.
@@ -288,6 +301,7 @@ class Scope
   # Example:
   #   next_ten = posts.skip(10).limit(10)
   skip: (skip)->
+    assert skip, "This function requires skip as its first argument"
     return @extend(skip: skip)
 
   # Returns a scope with combined options.
@@ -301,7 +315,7 @@ class Scope
 
   # Changes sorting order.
   sort: (fields, dir)->
-    throw "Direction must be 1 (asc) or -1 (desc)" unless dir == 1 || dir == -1
+    assert dir == 1 || dir == -1, "Direction must be 1 (asc) or -1 (desc)"
     sort = @options.sort || []
     for field in fields
       if Array.isArray(field)
@@ -318,7 +332,6 @@ class Scope
   # Example:
   #   connect().find("posts", author_id: id).one (err, post, db)->
   one: (callback)->
-    throw new Error("Callback required") unless callback instanceof Function
     @collection.one @selector, @options, callback
 
   # Passes each object to callback.  Passes null as last object.
@@ -326,7 +339,6 @@ class Scope
   # Example:
   #   connect().find("posts").each (err, post, db)->
   each: (callback)->
-    throw new Error("Callback required") unless callback instanceof Function
     @collection.each @selector, @options, callback
 
   # Passes all objects to callback.
@@ -334,7 +346,6 @@ class Scope
   # Example:
   #   connect().find("posts").all (err, posts)->
   all: (callback)->
-    throw new Error("Callback required") unless callback instanceof Function
     @collection.all @selector, @options, callback
 
   # Passes number of records in this query to callback.
@@ -362,10 +373,11 @@ class Scope
   #   connect().find("posts").map ((post)-> "#{post.title} on #{post.created_at}"), (error, posts)->
   #     console.log posts
   map: (fn, callback)->
+    assert fn, "This function requires a mapping function as its first argument"
     unless typeof fn == "function"
       name = fn
       fn = (object)-> object[name]
-    throw new Error("Callback required") unless callback instanceof Function
+    assert callback instanceof Function, "This function requires a callback"
     results = []
     @collection.each @selector, @options, (error, object)->
       return callback error if error
@@ -386,10 +398,11 @@ class Scope
   #   connect().find("posts").filter ((post)-> post.body.length > 500), (error, posts)->
   #     console.log "Found #{posts.count} posts longer than 500 characters"
   filter: (fn, callback)->
+    assert fn, "This function requires a filter function as its first argument"
     unless typeof fn == "function"
       name = fn
       fn = (object)-> object[name]
-    throw new Error("Callback required") unless callback instanceof Function
+    assert callback instanceof Function, "This function requires a callback"
     results = []
     @collection.each @selector, @options, (error, object)->
       return callback error if error
@@ -414,9 +427,10 @@ class Scope
   #   connect().find("posts").reduce ((total, post)-> total + post.body.length), (error, total)->
   #     console.log "Wrote #{total} characters"
   reduce: (value, fn, callback)->
+    assert fn, "This function requires a reduce function"
     if arguments.length < 3
       [value, fn, callback] = [null, value, fn]
-    throw new Error("Callback required") unless callback instanceof Function
+    assert callback instanceof Function, "This function requires a callback"
     @collection.each @selector, @options, (error, object)->
       return callback error if error
       if object
@@ -433,6 +447,7 @@ class Scope
   # Opens cursor and passes next result to query.  Passes null if there are no
   # more results.
   next: (callback)->
+    assert callback instanceof Function, "This function requires a callback"
     if @_cursor
       @_cursor.nextObject (error, object)->
         callback error, object
@@ -452,3 +467,6 @@ class Scope
     if @_cursor
       @_cursor.close()
     return
+
+
+exports.Collection = Collection
