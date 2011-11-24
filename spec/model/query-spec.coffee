@@ -190,8 +190,8 @@ vows.describe("Model query").addBatch
         class Custom extends Model
           @collection = "posts"
           @field "title"
-        Custom.prototype.__defineSetter__ "title", (title)->
-          @x_title = "!#{title}!"
+          @set "title", (title)->
+            @x_title = "!#{title}!"
         Custom.find(title: "Post 2").one @callback
 
         # Proves that setting post.title does set post.x_title
@@ -199,6 +199,7 @@ vows.describe("Model query").addBatch
         post.title = "Post 2"
         assert.equal post.x_title, "!Post 2!"
     "should not be used to load field value": (post)->
+      assert.equal post.title, "Post 2"
       assert !post.x_title
 
   "some fields":

@@ -1,7 +1,21 @@
+assert = require("assert")
 connect = require("./connect").connect
 
 
-exports.Model = class Model
+# Use this class to easily define model classes that can be loaded and saved by Poutine.
+#
+# Model classes have all sorts of interesting capabilities like field mapping, validation, before/after hooks, etc.
+#
+# Example:
+#   class User extends Poutine
+#     field "name", String
+#     field "password", String
+#     set "password", (clear)->
+#       _.password = encrypt(clear)
+#
+#   User.where(name: "Assaf").one (error, user)->
+#     console.log "Loaded #{user.name}"
+class Model
 
   # Finds all objects that match the query selector.
   #
@@ -39,8 +53,24 @@ exports.Model = class Model
   @where: (selector)->
     connect().find(this, selector)
 
-  # Defines a field.
+  # Defines a field and adds property accessors.
+  #
+  # First argument is the field name, second argument is the field type (optional).
+  #
+  # Only defined fields are loaded and saved.  Fields are loaded into the _ property, and accessors are defined to
+  # get/set the field value.  You can write your own accessors.
+  #
+  # Examples:
+  #   class User extends Poutine
+  #     field "name", String
+  #     field "password", String
+  #     set "password", (clear)->
+  #       _.password = encrypt(clear)
+  #
+  #   User.find().one (error, user)->
+  #     console.log user.name
   @field: (name, type)->
+    assert name, "Missing field name"
     @fields ||= {}
     @fields[name] = type || Object
     private = "_#{name}"
@@ -49,6 +79,30 @@ exports.Model = class Model
     @prototype.__defineSetter__ name, (value)->
       this._ ||= {}
       this._[name] = value
+
+  # Example:
+  #   class Post extends Poutine
+  #     field "author", Author
+  #     get "author", ->
+  #       @author ||= Author.find(@author_id)
+  #     set "author", (@author)->
+  #       @author_id = @author?._id
+  @get: (name, getter)->
+    assert name, "Missing property name"
+    assert setter, "Missing getter function"
+    @prototype.__defineGetter__ name, getter
+
+  # Convenience method for adding a setter property accessor.
+  #
+  # Examples:
+  #   class User extends Poutine
+  #     field "password", String
+  #     set "password", (clear)->
+  #       _.password = encrypt(clear)
+  @set: (name, setter)->
+    assert name, "Missing property name"
+    assert setter, "Missing setter function"
+    @prototype.__defineSetter__ name, setter
 
 
 Model.lifecycle =
@@ -61,3 +115,5 @@ Model.lifecycle =
       instance.afterLoad()
     return instance
 
+
+exports.Model = Model
