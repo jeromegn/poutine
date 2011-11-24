@@ -1,22 +1,21 @@
-{
-  "author": "Jerome Gravel-Niquet <jeromegn@gmail.com> (http://jgn.me)",
-  "name": "poutine",
-  "description": "MongoDB ORM",
-  "version": "0.0.1",
+{ "name": "poutine",
+  "version": "0.1.0",
   "repository": {
-    "url": ""
+    "type": "git",
+    "url": "git@github.com:assaf/poutine.git"
   },
+  "main": "./lib/poutine",
   "engines": {
-    "node": "~v0.4.5"
+    "node": "~v0.5.10"
   },
   "dependencies": {
-    "mongodb" : "*",
-    "sugar"   : "*",
-    "async"   : "*"
+    "coffee-script":  "~1.1.3",
+    "mongodb":        "~0.9.7",
+    "generic-pool":   "~1.0.7",
+    "weak":           "~0.1.1"
   },
   "devDependencies": {
-    "coffee-script" : "*",
-    "vows"          : "*"
-  },
-  "main": "./lib"
+    "vows":           "~0.5.13"
+  }
 }
+
