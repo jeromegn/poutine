@@ -17,7 +17,7 @@ vows.describe("Cursor").addBatch
             @callback null, posts
         scope.next each
     "should call once for each post": (posts)->
-      assert.equal posts.length, 3
+      assert.lengthOf posts, 3
 
   "rewind":
     topic: ->
@@ -36,7 +36,7 @@ vows.describe("Cursor").addBatch
             @callback null, posts
         scope.next each
     "should call once for each post": (posts)->
-      assert.equal posts.length, 2
+      assert.lengthOf posts, 2
 
 
 .export(module)

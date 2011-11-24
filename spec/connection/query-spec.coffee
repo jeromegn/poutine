@@ -12,7 +12,7 @@ vows.describe("Connection query").addBatch
       topic: ->
         connect().find "posts", { author_id: 1 }, sort: [["title", -1]], @callback
       "should return all posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
         for post in posts
           assert.equal post.author_id, 1
       "should return all posts in order": (posts)->
@@ -23,7 +23,7 @@ vows.describe("Connection query").addBatch
       topic: ->
         connect().find "posts", author_id: 1, @callback
       "should return all posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
         for post in posts
           assert.equal post.author_id, 1
 
@@ -31,14 +31,14 @@ vows.describe("Connection query").addBatch
       topic: ->
         connect().find "posts", @callback
       "should return all posts": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
 
     "query and options":
       topic: ->
         scope = connect().find("posts", { author_id: 1 }, sort: [["title", -1]])
         scope.all @callback
       "should return all posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
         for post in posts
           assert.equal post.author_id, 1
       "should return all posts in order": (posts)->
@@ -50,7 +50,7 @@ vows.describe("Connection query").addBatch
         scope = connect().find("posts", author_id: 1)
         scope.all @callback
       "should return all posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
         for post in posts
           assert.equal post.author_id, 1
 
@@ -59,14 +59,14 @@ vows.describe("Connection query").addBatch
         scope = connect().find("posts")
         scope.all @callback
       "should return all posts": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
 
     "IDs, options and callback":
       topic: ->
         connect().distinct "posts", "_id", (err, ids, db)=>
           db.find "posts", ids, sort: [["title", -1]], @callback
       "should return all posts": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
       "should return all posts in order": (posts)->
         title = (post.title for post in posts)
         assert.deepEqual title, ["Post 3", "Post 2", "Post 1"]
@@ -76,7 +76,7 @@ vows.describe("Connection query").addBatch
         connect().distinct "posts", "_id", (err, ids, db)=>
           db.find "posts", ids, @callback
       "should return all posts": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
 
     "IDs only":
       topic: ->
@@ -84,7 +84,7 @@ vows.describe("Connection query").addBatch
           scope = connect().find("posts", ids)
           scope.all @callback
       "should return all posts": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
 
     "ID, options and callback":
       topic: ->
@@ -152,7 +152,7 @@ vows.describe("Connection query").addBatch
         catch ex
           @callback null, ex
       "should fail": (error)->
-        assert error instanceof Error
+        assert.instanceOf error, Error
 
 
 .addBatch
@@ -166,14 +166,14 @@ vows.describe("Connection query").addBatch
       topic: ->
         connect().distinct "posts", "title", author_id: 1, @callback
       "should return distinct values": (values)->
-        assert.equal values.length, 2
+        assert.lengthOf values, 2
         assert.deepEqual values, ["Post 1", "Post 2"]
 
     "callback only":
       topic: ->
         connect().distinct "posts", "title", @callback
       "should return distinct values": (values)->
-        assert.equal values.length, 3
+        assert.lengthOf values, 3
         assert.deepEqual values, ["Post 1", "Post 2", "Post 3"]
 
     "no callback":
@@ -184,8 +184,7 @@ vows.describe("Connection query").addBatch
         catch ex
           @callback null, ex
       "should fail": (error)->
-        assert error instanceof Error
-
+        assert.instanceOf error, Error
 
 
 .export(module)

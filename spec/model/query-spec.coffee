@@ -24,7 +24,7 @@ vows.describe("Model query").addBatch
         for post in posts
           assert.instanceOf post, Post
       "should return all posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
         for post in posts
           assert.equal post.author_id, 1
       "should return all posts in order": (posts)->
@@ -35,7 +35,7 @@ vows.describe("Model query").addBatch
       topic: ->
         Post.find author_id: 1, @callback
       "should return all posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
         for post in posts
           assert.equal post.author_id, 1
 
@@ -46,14 +46,14 @@ vows.describe("Model query").addBatch
         for post in posts
           assert.instanceOf post, Post
       "should return all posts": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
 
     "query and options":
       topic: ->
         scope = Post.find({ author_id: 1 }, sort: [["title", -1]])
         scope.all @callback
       "should return all posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
         for post in posts
           assert.equal post.author_id, 1
       "should return all posts in order": (posts)->
@@ -65,7 +65,7 @@ vows.describe("Model query").addBatch
         scope = Post.find(author_id: 1)
         scope.all @callback
       "should return all posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
         for post in posts
           assert.equal post.author_id, 1
 
@@ -77,7 +77,7 @@ vows.describe("Model query").addBatch
         for post in posts
           assert.instanceOf post, Post
       "should return all posts": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
 
     "IDs, options and callback":
       topic: ->
@@ -87,7 +87,7 @@ vows.describe("Model query").addBatch
         for post in posts
           assert.instanceOf post, Post
       "should return all posts": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
       "should return all posts in order": (posts)->
         title = (post.title for post in posts)
         assert.deepEqual title, ["Post 3", "Post 2", "Post 1"]
@@ -97,7 +97,7 @@ vows.describe("Model query").addBatch
         connect().distinct "posts", "_id", (err, ids, db)=>
           Post.find ids, @callback
       "should return all posts": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
 
     "IDs only":
       topic: ->
@@ -108,7 +108,7 @@ vows.describe("Model query").addBatch
         for post in posts
           assert.instanceOf post, Post
       "should return all posts": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
 
     "ID, options and callback":
       topic: ->
@@ -156,7 +156,17 @@ vows.describe("Model query").addBatch
   
   "Model.where":
     topic: ->
-      setup @callback
+      setup =>
+        @callback null, Post.where(title: "Post 2")
+    "should return scope": (scope)->
+      assert scope.where
+      assert scope.desc
+    "query":
+      topic: (scope)->
+        scope.all @callback
+      "should return only selected posts": (posts)->
+        assert.lengthOf posts, 1
+        assert.equal posts[0].title, "Post 2"
 
 
 .addBatch

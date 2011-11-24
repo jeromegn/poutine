@@ -18,17 +18,26 @@ exports.Model = class Model
   # options, you must also specify a query selector.
   #
   # Examples:
-  #    Post.find { author_id: author._id }, limit: 50, (err, posts, db)->
-  #      . . .
+  #   Post.find { author_id: author._id }, limit: 50, (err, posts, db)->
+  #     . . .
   #
-  #    Post.find id, (err, post, db)->
-  #      . . .
+  #   Post.find id, (err, post, db)->
+  #     . . .
   #
-  #    scope = Post.find(author_id: author._id)
-  #    scope.all (err, posts, db)->
-  #      . . .
+  #   scope = Post.find(author_id: author._id)
+  #   scope.all (err, posts, db)->
+  #     . . .
   @find: (selector, options, callback)->
     connect().find(this, selector, options, callback)
+
+  # Returns a Scope for selecting objects from this model.
+  #
+  # Example:
+  #   my_posts = Post.where(author_id: me._id).desc("created_at")
+  #   my_posts.count (err, count, db)->
+  #     console.log "I wrote #{count} posts"
+  @where: (selector)->
+    connect().find(this, selector)
 
   # Defines a field.
   @field: (name, type)->

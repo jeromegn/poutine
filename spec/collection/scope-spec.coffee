@@ -15,7 +15,7 @@ vows.describe("Scope queries").addBatch
         scope.fields().all @callback
       "should return no fields": (posts)->
         for post in posts
-          assert.equal Object.keys(post).length, 1
+          assert.lengthOf Object.keys(post), 1
 
     "single argument":
       topic: (scope)->
@@ -148,7 +148,7 @@ vows.describe("Scope queries").addBatch
         scope.limit(1).all @callback
 
     "should return specified number of objects": (posts)->
-      assert.equal posts.length, 1
+      assert.lengthOf posts, 1
 
     "should return first results": (posts)->
       titles = (post.title for post in posts)
@@ -162,7 +162,7 @@ vows.describe("Scope queries").addBatch
         scope.skip(1).all @callback
 
     "should return specified number of objects": (posts)->
-      assert.equal posts.length, 2
+      assert.lengthOf posts, 2
 
     "should skip first result": (posts)->
       titles = (post.title for post in posts)
@@ -176,7 +176,7 @@ vows.describe("Scope queries").addBatch
         scope.skip(1).limit(1).all @callback
 
     "should return specified number of objects": (posts)->
-      assert.equal posts.length, 1
+      assert.lengthOf posts, 1
 
     "should skip first result, return only one": (posts)->
       titles = (post.title for post in posts)
@@ -206,7 +206,7 @@ vows.describe("Scope queries").addBatch
           else
             @callback null, titles
     "should pass each object, then null": (titles)->
-      assert.equal titles.length, 2
+      assert.lengthOf titles, 2
       assert.deepEqual titles, ["Post 1", "Post 2"]
 
 
@@ -215,7 +215,7 @@ vows.describe("Scope queries").addBatch
       setup =>
         connect().find("posts").where(author_id: 1).all @callback
     "should return all matching objects": (posts)->
-      assert.equal posts.length, 2
+      assert.lengthOf posts, 2
       for post in posts
         assert.equal post.author_id, 1
 
@@ -276,7 +276,7 @@ vows.describe("Scope queries").addBatch
       topic: (scope)->
         scope.filter "title", @callback
       "should return filtered objects": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
 
 
   "reduce":
@@ -286,14 +286,14 @@ vows.describe("Scope queries").addBatch
     "initial value and function":
       topic: (scope)->
         scope.reduce 0, ((memo, post)-> memo + post.title.length), @callback
-      "should return reduced value": (length)->
-        assert.equal length, 18
+      "should return reduced value": (total)->
+        assert.equal total, 18
 
     "function only":
       topic: (scope)->
         scope.reduce ((memo, post)-> memo + post.title.length), @callback
-      "should return reduced value": (length)->
-        assert.equal length, 18
+      "should return reduced value": (total)->
+        assert.equal total, 18
 
 
 .export(module)

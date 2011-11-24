@@ -14,7 +14,7 @@ vows.describe("Collection query").addBatch
       topic: (collection)->
         collection.find { author_id: 1 }, fields: ["title"], @callback
       "should return all matching posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
       "should return specified fields": (posts)->
         for post in posts
           assert post.title
@@ -23,7 +23,7 @@ vows.describe("Collection query").addBatch
       topic: (collection)->
         collection.find author_id: 1, @callback
       "should return all matching posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
 
     "query only":
       topic: (collection)->
@@ -36,7 +36,7 @@ vows.describe("Collection query").addBatch
         collection.distinct "_id", (err, ids)=>
           collection.find ids, fields: ["title"], @callback
       "should return all matching posts": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
       "should return specified fields": (posts)->
         for post in posts
           assert post.title
@@ -52,7 +52,7 @@ vows.describe("Collection query").addBatch
         topic: (scope)->
           scope.all @callback
         "should find all objects": (posts)->
-          assert.equal posts.length, 3
+          assert.lengthOf posts, 3
 
     "ID, options and callback":
       topic: (collection)->
@@ -121,7 +121,7 @@ vows.describe("Collection query").addBatch
         catch ex
           @callback null, ex
       "should fail": (error)->
-        assert error instanceof Error
+        assert.instanceOf error, Error
    
     "ID, options and callback":
       topic: (collection)->
@@ -159,7 +159,7 @@ vows.describe("Collection query").addBatch
       topic: (collection)->
         collection.all { author_id: 1 }, fields: ["title"], @callback
       "should return all matching posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
       "should return specified fields": (posts)->
         for post in posts
           assert post.title
@@ -168,7 +168,7 @@ vows.describe("Collection query").addBatch
       topic: (collection)->
         collection.all author_id: 1, @callback
       "should return all matching posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
 
     "no callback":
       topic: (collection)->
@@ -178,14 +178,14 @@ vows.describe("Collection query").addBatch
         catch ex
           @callback null, ex
       "should fail": (error)->
-        assert error instanceof Error
+        assert.instanceOf error, Error
     
     "IDs, options and callback":
       topic: (collection)->
         collection.distinct "_id", (err, ids)=>
           collection.all ids, fields: ["title"], @callback
       "should return all matching posts": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
       "should return specified fields": (posts)->
         for post in posts
           assert post.title
@@ -210,7 +210,7 @@ vows.describe("Collection query").addBatch
           else
             @callback null, posts
       "should return all matching posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
       "should return specified fields": (posts)->
         for post in posts
           assert post.title
@@ -224,7 +224,7 @@ vows.describe("Collection query").addBatch
           else
             @callback null, posts
       "should return all matching posts": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
 
     "no callback":
       topic: (collection)->
@@ -234,7 +234,7 @@ vows.describe("Collection query").addBatch
         catch ex
           @callback null, ex
       "should fail": (error)->
-        assert error instanceof Error
+        assert.instanceOf error, Error
     
     "IDs, options and callback":
       topic: (collection)->
@@ -246,7 +246,7 @@ vows.describe("Collection query").addBatch
             else
               @callback null, posts
       "should return all matching posts": (posts)->
-        assert.equal posts.length, 3
+        assert.lengthOf posts, 3
       "should return specified fields": (posts)->
         for post in posts
           assert post.title
@@ -282,7 +282,7 @@ vows.describe("Collection query").addBatch
         catch ex
           @callback null, ex
       "should fail": (error)->
-        assert error instanceof Error
+        assert.instanceOf error, Error
 
 
 .addBatch
@@ -298,14 +298,14 @@ vows.describe("Collection query").addBatch
       topic: (collection)->
         collection.distinct "title", author_id: 1, @callback
       "should return distinct values": (values)->
-        assert.equal values.length, 2
+        assert.lengthOf values, 2
         assert.deepEqual values, ["Post 1", "Post 2"]
 
     "callback only":
       topic: (collection)->
         collection.distinct "title", @callback
       "should return distinct values": (values)->
-        assert.equal values.length, 3
+        assert.lengthOf values, 3
         assert.deepEqual values, ["Post 1", "Post 2", "Post 3"]
 
     "no callback":
@@ -316,7 +316,7 @@ vows.describe("Collection query").addBatch
         catch ex
           @callback null, ex
       "should fail": (error)->
-        assert error instanceof Error
+        assert.instanceOf error, Error
 
 
 .addBatch
@@ -337,7 +337,7 @@ vows.describe("Collection query").addBatch
         topic: (scope)->
           scope.all @callback
         "should find all objects in the collection": (posts)->
-          assert.equal posts.length, 3
+          assert.lengthOf posts, 3
           assert.include (post.title for post in posts), "Post 2"
 
     "with criteria":
@@ -345,7 +345,7 @@ vows.describe("Collection query").addBatch
         scope = collection.where(author_id: 1)
         scope.all @callback
       "should find specific objects in the collection": (posts)->
-        assert.equal posts.length, 2
+        assert.lengthOf posts, 2
         for post in posts
           assert.equal post.author_id, 1
 
@@ -355,7 +355,7 @@ vows.describe("Collection query").addBatch
         scope = scope.where(title: "Post 2")
         scope.all @callback
       "should use combined scope": (posts)->
-        assert.equal posts.length, 1
+        assert.lengthOf posts, 1
         assert.equal posts[0].title, "Post 2"
 
 
