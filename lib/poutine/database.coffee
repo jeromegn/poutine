@@ -22,7 +22,7 @@ class Configuration
         client.open callback
       destroy:  (connection)->
         connection.close()
-      max:      options.pool || 10
+      max:      options.pool || 50
       idleTimeoutMillis: 30000
 
   # Acquire new connection.
