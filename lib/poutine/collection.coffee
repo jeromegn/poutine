@@ -203,19 +203,22 @@ class Collection
   #   posts = connect().find("posts")
   #   posts.insert title: "New and exciting", (error, post)->
   #     console.log "Inserted #{post._id}"
-  insert: (document, options, callback)->
+  insert: (objects, options, callback)->
     if !callback && typeof options == "function"
       [options, callback] = [null, options]
+    multi = Array.isArray(objects)
+    objects = [objects] unless multi
+    documents = ((if Model.isModel(object) then object._ else object) for object in objects)
     @_connect (error, collection, database)=>
       return callback error if error
       if callback
-        collection.insert document, options, (error, results)->
-          if Array.isArray(document)
-            callback error, results
+        collection.insert documents, options, (error, results)->
+          if multi
+            callback error, objects
           else
-            callback error, results[0]
+            callback error, objects[0]
       else
-        collection.insert document, options
+        collection.insert documents, options
 
   
   # -- Implementation details --

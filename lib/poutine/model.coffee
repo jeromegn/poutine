@@ -21,6 +21,12 @@ connect = require("./connect").connect
 #   User.where(name: "Assaf").one (error, user)->
 #     console.log "Loaded #{user.name}"
 class Model
+  # Default constructor assigns defined fields from any object you pass, e.g.
+  #   new User(name: "Assaf")
+  constructor: (document)->
+    if document
+      for name of @constructor.fields
+        @[name] = document[name]
 
   # -- Schema --
  
@@ -96,6 +102,11 @@ class Model
     assert setter, "Missing setter function"
     @prototype.__defineSetter__ name, setter
 
+  # Returns true if we think the object is an instance of a model
+  @isModel: (instance)->
+    model = instance.constructor
+    return model.collection_name && model.fields
+
 
   # -- Finders --
 
@@ -146,6 +157,12 @@ class Model
   #         callback error
   @afterLoad: (hook)->
     @lifecycle.addHook this, "afterLoad", hook
+
+
+  # -- Insert/update/remove --
+
+  @insert: (document, callback)->
+    connect().collection(this).insert document, callback
 
 
 # Poutine uses these lifecycle methods to perform operations on models, but keeps them separate so we don't pollute the
