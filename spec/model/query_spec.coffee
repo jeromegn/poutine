@@ -226,29 +226,61 @@ vows.describe("Model query").addBatch
       assert !post._.category
 
   "afterLoad":
-    topic: ->
-      setup =>
-        class AfterLoad extends Model
-          @collection "posts"
-          @field "title"
-          afterLoad: ->
-            @loaded = @title
-        AfterLoad.find(title: "Post 2").one @callback
-    "should call onLoad method after assigning fields": (post)->
-      assert.equal post.loaded, "Post 2"
-  
-  "failed afterLoad":
-    topic: ->
-      setup =>
-        class Failed extends Model
-          @collection "posts"
-          @field "title"
-          afterLoad: ->
-            throw "Fail!"
-        Failed.find(title: "Post 2").one (error)=>
-          @callback null, error
-    "should pass error to callback": (error)->
-      assert.equal error, "Fail!"
+    "returns value":
+      "successful":
+        topic: ->
+          setup =>
+            class AfterLoad extends Model
+              @collection "posts"
+              @field "title"
+              @afterLoad (document)->
+                @loaded = @title
+                @document = !!document.title
+            AfterLoad.find(title: "Post 2").one @callback
+        "should call afterLoad hooks after assigning fields": (post)->
+          assert.equal post.loaded, "Post 2"
+        "should call afterLoad hooks with document": (post)->
+          assert post.document
+      
+      "error":
+        topic: ->
+          setup =>
+            class Failed extends Model
+              @collection "posts"
+              @field "title"
+              @afterLoad ->
+                throw new Error("Fail!")
+            Failed.find(title: "Post 2").one (error)=>
+              @callback null, error
+        "should pass error to callback": (error)->
+          assert.equal error.message, "Fail!"
 
+    "uses callback":
+      "successful":
+        topic: ->
+          setup =>
+            class AfterLoad extends Model
+              @collection "posts"
+              @field "title"
+              @afterLoad (document, callback)->
+                @loaded = @title
+                callback()
+                return
+            AfterLoad.find(title: "Post 2").one @callback
+        "should call afterLoad hooks after assigning fields": (post)->
+          assert.equal post.loaded, "Post 2"
+
+      "error":
+        topic: ->
+          setup =>
+            class Failed extends Model
+              @collection "posts"
+              @field "title"
+              @afterLoad (document, callback)->
+                callback new Error("Fail!")
+            Failed.find(title: "Post 2").one (error)=>
+              @callback null, error
+        "should pass error to callback": (error)->
+          assert.equal error.message, "Fail!"
 
 .export(module)

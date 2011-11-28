@@ -46,7 +46,7 @@ class Model
   # First argument is the field name, second argument is the field type (optional).
   #
   # Only defined fields are loaded and saved.  Fields are loaded into the _ property, and accessors are defined to
-  # get/set the field value.  You can write your own accessors.
+    # get/set the field value.  You can write your own accessors.
   #
   # Examples:
   #   class User extends Poutine
@@ -101,17 +101,16 @@ class Model
 
   # Finds all objects that match the query selector.
   #
-  # If the last argument is a callback, load all matching objects and pass them to callback.
-  # Callback receives error, objects and connection.
+  # If the last argument is a callback, load all matching objects and pass them to callback.  Callback receives error,
+  # objects and connection.
   #
   # Without callback, returns a new Scope object.
   #
-  # The first argument is the query selector.  You can also pass an array of identifiers to load
-  # specific objects, or a single identifier to load a single object.  If missing, all objects
-  # are loaded from the collection.
+  # The first argument is the query selector.  You can also pass an array of identifiers to load specific objects, or a
+  # single identifier to load a single object.  If missing, all objects are loaded from the collection.
   #
-  # The second argument are query options (limit, sort, etc).  If you want to specify query
-  # options, you must also specify a query selector.
+  # The second argument are query options (limit, sort, etc).  If you want to specify query options, you must also
+  # specify a query selector.
   #
   # Examples:
   #   Post.find { author_id: author._id }, limit: 50, (err, posts, db)->
@@ -135,19 +134,29 @@ class Model
   @where: (selector)->
     connect().find(this, selector)
 
+  # Adds an afterLoaded hook, called after the model instance is set from the document.   Raising an error will stop
+  # loading any more objects.
+  #
+  # Example:
+  #   class User
+  #     @afterLoad (callback)->
+  #       # Example. You don't really want to do this, since it will make 1+N queries.
+  #       Author.find @author_id, (error, author)=>
+  #         @author = author
+  #         callback error
+  @afterLoad: (hook)->
+    @lifecycle.addHook this, "afterLoad", hook
+
 
 # Poutine uses these lifecycle methods to perform operations on models, but keeps them separate so we don't pollute the
 # Model prototype with methods that are never used directly by actual model classes.  Inheriting from a class that has
 # hundreds of implementation methods is an anti-pattern we dislike.
 Model.lifecycle =
   # Used to instantiate a new instance from a loaded object.
-  load: (model, values)->
-    instance = new model(values)
-    instance._ = values
-    # Call afterLoad handler if defined.
-    if instance.afterLoad instanceof Function
-      instance.afterLoad()
-    return instance
+  load: (model, document, callback)->
+    instance = new model(document)
+    instance._ = document
+    @callHook "afterLoad", instance, callback, document
 
   # Need to call this at least once per model.  Takes care of defining accessors for _id, ...
   prepare: (model)->
@@ -158,6 +167,50 @@ Model.lifecycle =
         this._ ||= {}
         this._._id = id
 
+
+  # -- Hooks --
+
+  # Add the named hook.
+  # model - The model
+  # hook  - Hook name
+  # fn    - Function to be called
+  addHook: (model, name, fn)->
+    assert fn, "This method requires a function argument"
+    named = model._hooks ||= {}
+    hooks = named[name] ||= []
+    hooks.push fn
+
+  # Call the named hooks and pass control to callback when done.
+  # name      - The hook name, e.g. beforeSave
+  # model     - The model class
+  # instance  - The model instance
+  # args      - Optional arguments to pass to hooks
+  callHook: (name, instance, callback, args...)->
+    model = instance.constructor
+    hooks = model._hooks?[name]
+    # No hooks, just go back to callback
+    unless hooks
+      callback null, instance
+      return
+  
+    # Call the next hook in the chain, until we're done or get an error.
+    call = (hooks, index)->
+      hook = hooks[index]
+      if hook
+        try
+          # If we get a result, continue to next hook, otherwise, have callback deal with it.
+          result = hook.call(instance, args..., (error)->
+            return callback error if error
+            unless result
+              call hooks, index + 1
+          )
+          if result
+            call hooks, index + 1
+        catch error
+          callback error
+      else
+        callback null, instance
+    call hooks, 0
 
 
 exports.Model = Model

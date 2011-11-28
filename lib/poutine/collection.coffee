@@ -77,12 +77,9 @@ class Collection
       collection.findOne selector || {}, options || {}, (error, object)=>
         database.end()
         if @model && object
-          try
-            object = Model.lifecycle.load(@model, object)
-          catch error
-            callback error
-            return
-        callback error, object, database
+          Model.lifecycle.load @model, object, callback
+        else
+          callback error, object, database
     return
 
   # Passes each objects from this query to callback.  Passes null after the
@@ -107,21 +104,26 @@ class Collection
           if error
             cursor.close()
             callback error
+            return
+          # No object, we're done with this query
+          unless object
+            cursor.close()
+            callback null
+            return
+
+          if @model
+            Model.lifecycle.load @model, object, (error, instance)->
+              if error
+                callback error
+                cursor.close()
+              else
+                callback null, instance
+                # Use nextTick to avoid stack overflow on large result sets.
+                process.nextTick readNext
           else
-            if object
-              if @model
-                try
-                  object = Model.lifecycle.load(@model, object)
-                catch error
-                  callback error
-                  cursor.close()
-                  return
-              callback null, object
-              # Use nextTick to avoid stack overflow on large result sets.
-              process.nextTick readNext
-            else
-              cursor.close()
-              callback null
+            callback null, object
+            # Use nextTick to avoid stack overflow on large result sets.
+            process.nextTick readNext
       readNext()
     return
 
