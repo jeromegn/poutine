@@ -186,6 +186,36 @@ class Collection
     return new Scope(this, selector)
 
 
+  # -- Insert/update/remove --
+
+  # Inserts document(s) into the database.
+  #
+  # If the document(s) do not have an ID, sets the ID before insertion.  This method does not block, with a callback it
+  # simply passes the document(s) to the callback.  You can use the callback if you're inserting with `safe: true` or
+  # want to wait for after-save hooks.
+  #
+  # When called with a single document, passes it to the callback. WHen called with an array, inserts all the documents
+  # and passes that array to the callback.
+  #
+  # Example:
+  #   posts = connect().find("posts")
+  #   posts.insert title: "New and exciting", (error, post)->
+  #     console.log "Inserted #{post._id}"
+  insert: (document, options, callback)->
+    if !callback && typeof options == "function"
+      [options, callback] = [null, options]
+    @_connect (error, collection, database)=>
+      return callback error if error
+      if callback
+        collection.insert document, options, (error, results)->
+          if Array.isArray(document)
+            callback error, results
+          else
+            callback error, results[0]
+      else
+        collection.insert document, options
+
+  
   # -- Implementation details --
 
   # Passes error, collection and database to callback.

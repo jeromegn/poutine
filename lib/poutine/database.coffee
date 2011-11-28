@@ -180,5 +180,22 @@ class Database extends EventEmitter
     @collection(name).distinct key, selector, callback
 
 
+  # -- Insert/update/remove --
+
+  # Inserts document(s) into the database.
+  #
+  # If the document(s) do not have an ID, sets the ID before insertion.  This method does not block, with a callback it
+  # simply passes the document(s) to the callback.  You can use the callback if you're inserting with `safe: true` or
+  # want to wait for after-save hooks.
+  #
+  # When called with a single document, passes it to the callback. WHen called with an array, inserts all the documents
+  # and passes that array to the callback.
+  #
+  # Example:
+  #   connect().insert "posts", title: "New and exciting"
+  insert: (name, object, options, callback)->
+    @collection(name).insert object, options, callback
+
+
 exports.Configuration = Configuration
 exports.Database      = Database
