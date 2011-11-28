@@ -3,6 +3,7 @@ assert = require("assert")
 { Db, Server } = require("mongodb")
 { EventEmitter } = require("events")
 { Pool } = require("generic-pool")
+{ Model } = require("./model")
 # Cleanup on weak references. Optional for now because I don't know how well the
 # node-weak works for other people.
 try
@@ -193,7 +194,27 @@ class Database extends EventEmitter
   #
   # Example:
   #   connect().insert "posts", title: "New and exciting"
+  #
+  #   posts = [new Post(title: "First!")]
+  #   connect().insert posts
   insert: (name, object, options, callback)->
+    # First argument is a model, insert it.  We have 3 arguments top in this case.
+    if Model.isModel(name)
+      [object, options, callback] = [name, object, options]
+      @collection(object.constructor).insert object, options, callback
+      return
+    
+    # First argument is an array of models, insert them. Array may be empty.
+    if Array.isArray(name)
+      [objects, options, callback] = [name, object, options]
+      first = objects[0]
+      if first
+        @collection(first.constructor).insert objects, options, callback
+      else if callback
+        callback null, []
+      return
+    
+    # The more common case, we have multiple objects to insert into a named collection.
     @collection(name).insert object, options, callback
 
 

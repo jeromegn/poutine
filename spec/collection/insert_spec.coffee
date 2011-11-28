@@ -76,7 +76,8 @@ vows.describe("Collection insert").addBatch
         "should all exist in database": (posts)->
           assert.lengthOf posts, 2
           categories = (post.category for post in posts)
-          assert.deepEqual categories, ["foo", "bar"]
+          assert.include categories, "foo"
+          assert.include categories, "bar"
 
     "multiple documents and callback":
       topic: (collection)->
@@ -95,7 +96,8 @@ vows.describe("Collection insert").addBatch
         "should exist in database": (posts)->
           assert.lengthOf posts, 2
           categories = (post.category for post in posts)
-          assert.deepEqual categories, ["foo", "bar"]
+          assert.include categories, "foo"
+          assert.include categories, "bar"
+
 
 .export(module)
-

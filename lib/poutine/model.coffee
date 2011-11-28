@@ -26,7 +26,8 @@ class Model
   constructor: (document)->
     if document
       for name of @constructor.fields
-        @[name] = document[name]
+        value = document[name]
+        @[name] = value if value
 
   # -- Schema --
  
@@ -171,7 +172,7 @@ class Model
 Model.lifecycle =
   # Used to instantiate a new instance from a loaded object.
   load: (model, document, callback)->
-    instance = new model(document)
+    instance = new model()
     instance._ = document
     @callHook "afterLoad", instance, callback, document
 

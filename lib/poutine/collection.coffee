@@ -211,6 +211,7 @@ class Collection
     documents = ((if Model.isModel(object) then object._ else object) for object in objects)
     @_connect (error, collection, database)=>
       return callback error if error
+      database.end()
       if callback
         collection.insert documents, options, (error, results)->
           if multi

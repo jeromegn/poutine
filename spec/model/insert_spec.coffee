@@ -60,7 +60,8 @@ vows.describe("Model insert").addBatch
             "should exist in database": (posts)->
               assert.lengthOf posts, 2
               categories = (post.category for post in posts).join(" ")
-              assert.equal categories, "foo bar"
+              assert.include categories, "foo"
+              assert.include categories, "bar"
 
         "with callback":
           topic: ->
@@ -81,7 +82,8 @@ vows.describe("Model insert").addBatch
             "should exist in database": (posts)->
               assert.lengthOf posts, 2
               categories = (post.category for post in posts).join(" ")
-              assert.equal categories, "foo bar"
+              assert.include categories, "foo"
+              assert.include categories, "bar"
 
 
     "Model":
@@ -128,7 +130,8 @@ vows.describe("Model insert").addBatch
             "should exist in database": (posts)->
               assert.lengthOf posts, 2
               categories = (post.category for post in posts).join(" ")
-              assert.equal categories, "foo bar"
+              assert.include categories, "foo"
+              assert.include categories, "bar"
 
         "with callback":
           topic: ->
@@ -150,7 +153,8 @@ vows.describe("Model insert").addBatch
             "should exist in database": (posts)->
               assert.lengthOf posts, 2
               categories = (post.category for post in posts).join(" ")
-              assert.equal categories, "foo bar"
+              assert.include categories, "foo"
+              assert.include categories, "bar"
 
 
 .export(module)
