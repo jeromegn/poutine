@@ -219,7 +219,9 @@ Model.lifecycle =
           # If we get a result, continue to next hook, otherwise, have callback deal with it.
           result = hook.call(instance, args..., (error)->
             return callback error if error
-            unless result
+            if result
+              process.emit "error", new Error("#{name} hook on #{model.name}/#{instance._id} returned value *and* called callback")
+            else
               call hooks, index + 1
           )
           if result
