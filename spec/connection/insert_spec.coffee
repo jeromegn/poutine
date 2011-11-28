@@ -17,10 +17,13 @@ vows.describe("Connection insert").addBatch
 
     "document only":
       topic: ->
-        result = connect().insert("posts", title: "Insert 1.1")
+        @post = { "posts", title: "Insert 1.1" }
+        result = connect().insert("posts", @post)
         return result || "nothing"
       "should return null": (result)->
         assert.equal result, "nothing"
+      "should set document ID": ->
+        assert @post._id
       "new document":
         topic: ->
           connect().find("posts", title: "Insert 1.1").one @callback
@@ -71,10 +74,14 @@ vows.describe("Connection insert").addBatch
 
     "multiple documents, no callback":
       topic: ->
-        result = connect().insert("posts", [{ title: "Insert 1.5", category: "foo" }, { title: "Insert 1.5", category: "bar" }])
+        @posts = [{ title: "Insert 1.5", category: "foo" }, { title: "Insert 1.5", category: "bar" }]
+        result = connect().insert("posts", @posts)
         return result || "nothing"
       "should return null": (result)->
         assert.equal result, "nothing"
+      "should set document ID": ->
+        for post in @posts
+          assert post._id
       "new documents":
         topic: ->
           connect().find("posts", title: "Insert 1.5").all @callback

@@ -22,10 +22,13 @@ vows.describe("Model insert").addBatch
       "single":
         "no callback":
           topic: ->
-            result = Post.insert(title: "Insert 3.1")
+            @post = { title: "Insert 3.1" }
+            result = Post.insert(@post)
             return result || "nothing"
           "should return nothing": (result)->
             assert.equal result, "nothing"
+          "should set document ID": ->
+            assert @post._id
           "new document":
             topic: ->
               Post.find title: "Insert 3.1", @callback
@@ -50,10 +53,14 @@ vows.describe("Model insert").addBatch
       "multiple":
         "no callback":
           topic: ->
-            result = Post.insert([{ title: "Insert 3.3", category: "foo" }, { title: "Insert 3.3", category: "bar" }])
+            @posts = [{ title: "Insert 3.3", category: "foo" }, { title: "Insert 3.3", category: "bar" }]
+            result = Post.insert(@posts)
             return result || "nothing"
           "should return nothing": (result)->
             assert.equal result, "nothing"
+          "should set document ID": ->
+            for post in @posts
+              assert post._id
           "new documents":
             topic: ->
               Post.find title: "Insert 3.3", @callback
@@ -89,11 +96,13 @@ vows.describe("Model insert").addBatch
     "Model":
       "no callback":
         topic: ->
-          post = new Post(title: "Insert 3.5")
-          result = Post.insert(post)
+          @post = new Post(title: "Insert 3.5")
+          result = Post.insert(@post)
           return result || "nothing"
         "should return nothing": (result)->
           assert.equal result, "nothing"
+        "should set document ID": ->
+          assert @post._id
         "new document":
           topic: ->
             Post.find title: "Insert 3.5", @callback
@@ -119,11 +128,14 @@ vows.describe("Model insert").addBatch
       "multiple":
         "no callback":
           topic: ->
-            posts = [new Post( title: "Insert 3.7", category: "foo" ), new Post( title: "Insert 3.7", category: "bar" )]
-            result = Post.insert(posts)
+            @posts = [new Post( title: "Insert 3.7", category: "foo" ), new Post( title: "Insert 3.7", category: "bar" )]
+            result = Post.insert(@posts)
             return result || "nothing"
           "should return nothing": (result)->
             assert.equal result, "nothing"
+          "should set document ID": ->
+            for post in @posts
+              assert post._id
           "new documents":
             topic: ->
               Post.find title: "Insert 3.7", @callback

@@ -1,10 +1,16 @@
 ## Version 0.3
 
-Added insert operations on connection and collection.  For example:
+Added insert operations on connection, collection and model.  For example:
+
+    user = new User(name: "Assaf")
+    User.insert user
+    console.log "Inserted #{user._id}"
 
     posts = connect().find("posts")
-    posts.insert title: "New and exciting", (error, post)->
+    posts.insert { title: "New and exciting" }, { safe: true }, (error, post)->
       console.log "Inserted #{post._id}"
+
+    connect().insert "posts", title: "Directly to connection"
 
 Added support for hooks with callbacks.  `afterLoad` becomes a hook.  For example:
 

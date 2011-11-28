@@ -12,10 +12,13 @@ vows.describe("Collection insert").addBatch
 
     "document only":
       topic: (collection)->
-        result = collection.insert(title: "Insert 2.1")
+        @post = { title: "Insert 2.1" }
+        result = collection.insert(@post)
         return result || "nothing"
       "should return null": (result)->
         assert.equal result, "nothing"
+      "should set document ID": ->
+        assert @post._id
       "new document":
         topic: (result, collection)->
           collection.find(title: "Insert 2.1").one @callback
@@ -66,10 +69,14 @@ vows.describe("Collection insert").addBatch
 
     "multiple documents, no callback":
       topic: (collection)->
-        result = collection.insert([{ title: "Insert 2.5", category: "foo" }, { title: "Insert 2.5", category: "bar" }])
+        @posts = [{ title: "Insert 2.5", category: "foo" }, { title: "Insert 2.5", category: "bar" }]
+        result = collection.insert(@posts)
         return result || "nothing"
       "should return null": (result)->
         assert.equal result, "nothing"
+      "should set document ID": ->
+        for post in @posts
+          assert post._id
       "new documents":
         topic: (result, collection)->
           collection.find(title: "Insert 2.5").all @callback
