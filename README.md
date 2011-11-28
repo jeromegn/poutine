@@ -1,5 +1,32 @@
 # Killing It With Poutine
 
+If you're using MongoDB, developing with Node.js and like CoffeeScript, we've got just the thing for you. It's easier to
+work with than any driver, it will map your model objects to MongoDB documents, and it got a sweet API that will make
+your code beautiful.
+
+Check this out:
+
+    { Model } = require("poutine")
+
+
+    class User extends Model
+      @collection "users"
+
+      @field "name", String
+
+      @field "password", String
+      @set "password", (clear)->
+        @_.password = crypt(clear)
+
+      @field "email", String
+
+      @get "posts", ->
+        Post.where(author_id: @_id)
+
+
+    user = new User(name: "Assaf")
+    name.save()
+
 
 ## A Better Driver API
 
