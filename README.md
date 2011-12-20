@@ -421,8 +421,18 @@ argument.  For example:
 
 You can call `update` with three arguments, the first is the updated document (don't forget $set if you don't want to replace the found document(s)), the second is the options for your update (`multi` and `upsert`, both default to false). Last argument is the callback as always, returns an error if any, but nothing else.
 
-    posts.where({permalink: {$exists: false}}).update {$set: {permalink: linkGenerator(post)}}, {multi: true} (error)->
+    posts.where({permalink: {$exists: false}}).update {$set: {permalink: linkGenerator(post)}}, {multi: true}, (error)->
       console.log "All posts without permalinks now got some link love."
+
+There's a shorthand `update_all` version of `update` to update multiple documents at once without dealing with an options object.
+
+    posts.where({permalink: {$exists: false}}).update_all {$set: {permalink: linkGenerator(post)}}, (error)->
+      console.log "All posts without permalinks now got some link love."
+
+There's a shorthand for `upsert`ing too.
+
+    posts.upsert {title: "First blog post"}, {title: "First and best blog post"}, (error)->
+      console.log "If the blog post was found, it was updated, else it was inserted."
 
 
 ### Cursors

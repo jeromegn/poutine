@@ -240,15 +240,12 @@ class Collection
     assert selector instanceof Object, "`update` selector is required."
     assert document instanceof Object, "`document` to update the found documents is required."
     if !callback && typeof options == "function"
-      [options, callback] = [{}, options]
-    options.upsert ||= false
-    options.multi ||= false
-
+      [options, callback] = [null, options]
     @_connect (error, collection, database)=>
       return callback error if error
       database.end()
       collection.update selector, document, options, callback
-    
+  
   
   # -- Implementation details --
 
@@ -508,8 +505,13 @@ class Scope
 
   # -- Insertion, updating --
 
+  # Updates document(s) matching the scope
   update: (object, options, callback)->
     @collection.update @selector, object, options, callback
+  
+  # Updates all the documents matching the scope
+  update_all: (object, callback)->
+    @collection.update @selector, object, {multi: true}, callback
 
 
   # -- Cursors --
