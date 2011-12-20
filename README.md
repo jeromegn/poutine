@@ -419,6 +419,11 @@ argument.  For example:
     connect().find("posts").reduce ((total, post)-> total + post.body.length), (error, total)->
       console.log "Wrote #{total} characters"
 
+You can call `update` with three arguments, the first is the updated document (don't forget $set if you don't want to replace the found document(s)), the second is the options for your update (`multi` and `upsert`, both default to false). Last argument is the callback as always, returns an error if any, but nothing else.
+
+    posts.where({permalink: {$exists: false}}).update {$set: {permalink: linkGenerator(post)}}, {multi: true} (error)->
+      console.log "All posts without permalinks now got some link love."
+
 
 ### Cursors
 
