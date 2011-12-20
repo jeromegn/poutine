@@ -221,6 +221,34 @@ class Collection
       else
         collection.insert documents, options
 
+
+  # Updates document(s) into the database.
+  #
+  # Arguments:
+  #   - selector criteria to find the document(s) to update
+  #   - document to update the found document(s) to (use $set to not replace the document(s))
+  #   - options (optional)
+  #     - upsert (false) boolean indicating if the document should be created if not found
+  #     - multi (false) boolean indicating if more than one documents should be updated if found
+  #   - callback (optional)
+  #     - error if there's an error
+  #
+  # Example:
+  #   Post.update {title: "New and exciting"}, {title: "Old and boring"}, (error, updated)->
+  #     console.log "Updated post" if updated
+  update: (selector, document, options, callback)->
+    assert selector instanceof Object, "`update` selector is required."
+    assert document instanceof Object, "`document` to update the found documents is required."
+    if !callback && typeof options == "function"
+      [options, callback] = [{}, options]
+    options.upsert ||= false
+    options.multi ||= false
+
+    @_connect (error, collection, database)=>
+      return callback error if error
+      database.end()
+      collection.update selector, document, options, callback
+    
   
   # -- Implementation details --
 
@@ -476,6 +504,12 @@ class Scope
           callback error
       else
         callback null, value
+
+
+  # -- Insertion, updating --
+
+  update: (object, options, callback)->
+    @collection.update @selector, object, options, callback
 
 
   # -- Cursors --

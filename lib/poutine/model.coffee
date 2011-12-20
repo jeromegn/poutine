@@ -164,6 +164,9 @@ class Model
 
   @insert: (document, callback)->
     connect().collection(this).insert document, callback
+  
+  @update: (selector, document, options, callback)->
+    connect().collection(this).update selector, document, options, callback
 
 
 # Poutine uses these lifecycle methods to perform operations on models, but keeps them separate so we don't pollute the
