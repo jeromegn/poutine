@@ -171,6 +171,7 @@ class Model
   @update_all: (selector, document, options, callback)->
     if !callback && typeof options == "function"
       [options, callback] = [{}, options]
+    options ||= {}
     options.multi = true
     connect().collection(this).update selector, document, options, callback
   

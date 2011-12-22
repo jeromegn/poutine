@@ -241,9 +241,11 @@ class Collection
     assert document instanceof Object, "`document` to update the found documents is required."
     if !callback && typeof options == "function"
       [options, callback] = [null, options]
+    selector = if Model.isModel(selector) then selector._ else selector
     @_connect (error, collection, database)=>
       return callback error if error
       database.end()
+      
       if callback
         collection.update selector, document, options, callback
       else

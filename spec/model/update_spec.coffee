@@ -15,75 +15,150 @@ vows.describe("Model update").addBatch
     topic: ->
       setup @callback
     
-    "updating":
+    "POJO":
       "single":
-        topic: ->
-          post = { title: "Post to update" }
-          Post.insert post, {safe: true}, (err, post)=>
-            Post.update {title: post.title}, {$set: {title: "Post updated"}}, {safe: true}, =>
-              Post.find({title: "Post updated"}).one @callback
-          return
-        "should be updated in the database": (post)->
-          assert.equal post.title, "Post updated"
-      
-
-      "multiple":
-        "shorthand":
-          topic: ->
-            posts = [
-              {title: "test post 1"}
-              {title: "test post 2"}
-              {title: "test post 3"}
-            ]
-            Post.insert posts, {safe: true}, =>
-              Post.update_all {$or: posts}, {$set: {title: "Multiple updated"}}, {safe: true}, =>
-                Post.find {title: "Multiple updated"}, @callback
-            return
-          "should be updated in the database": (posts)->
-            assert.lengthOf posts, 3
-            assert.equal posts[0].title, "Multiple updated"
-        "normal":
-          topic: ->
-            posts = [
-              {title: "test post 4"}
-              {title: "test post 5"}
-            ]
-            Post.insert posts, {safe: true}, (err, posts)=>
-              Post.update {$or: posts}, {$set: {title: "Multiple updated 2"}}, {multi: true, safe: true}, =>
-                Post.find {title: "Multiple updated 2"}, @callback
-            return
-          "should be updated in the database": (posts)->
-            assert.lengthOf posts, 2
-            assert.equal posts[0].title, "Multiple updated 2"
-    
-
-    "updating w/ scope":
-      "single":
-        topic: ->
-          post = { title: "Post 2 to update" }
-          Post.insert post, {safe: true}, =>
-            Post.where(post).update {$set: {title: "Post 2 updated"}}, {safe: true}, =>
-              Post.find({title: "Post 2 updated"}).all @callback
-          return
-        "should be updated in the database": (posts)->
-          assert.lengthOf posts, 1
-          assert.equal posts[0].title, "Post 2 updated"
-      
-      "multiple":
         topic: ->
           posts = [
-            { title: "Post 3 to update" }
-            { title: "Post 4 to update" }
+            {title: "Update 1"}
+            {title: "Update 1"}
           ]
-          Post.insert posts, {safe: true}, =>
-            Post.where($or: posts).update_all {$set: {title: "Dot notation multi updated"}}, {safe: true}, =>
-              Post.where({title: "Dot notation multi updated"}).all @callback
-          return
-        "should be updated in the database": (posts)->
-          assert.lengthOf posts, 2
-          assert.equal posts[0].title, "Dot notation multi updated"
+          Post.insert posts, {safe: true}, @callback
 
+        "no callback":
+          topic: ->
+            update = Post.update {title: "Update 1"}, {title: "Update 1.1"}
+            return update || "nothing"
+          "should return nothing": (update)->
+            assert.equal update, "nothing"
+          "updated document":
+            topic: ->
+              Post.find title: "Update 1.1", @callback
+            "should exist in database": (posts)->
+              assert.equal posts[0].title, "Update 1.1"
 
+        "with callback":
+          topic: ->
+            Post.update {title: "Update 1"}, {$set: {title: "Update 1.2"}}, {safe: true}, @callback
+          "should pass the number of updated documents to the callback": (updated)->
+            assert.equal updated, 1
+          "updated document":
+            topic: ->
+              Post.find title: "Update 1.2", @callback
+            "should exist in database": (posts)->
+              assert.equal posts[0].title, "Update 1.2"
+      
+
+      "multiple":
+        "long form":
+          topic: ->
+            posts = [
+              {title: "Update 2"}
+              {title: "Update 2"}
+              {title: "Update 3"}
+              {title: "Update 3"}
+            ]
+            Post.insert posts, {safe: true}, @callback
+
+          "no callback":
+            topic: (posts) ->
+              update = Post.update {title: "Update 2"}, {title: "Update 2.1"}, {multi: true}
+              return update || "nothing"
+            "should return nothing": (update)->
+              assert.equal update, "nothing"
+            "updated document":
+              topic: ->
+                Post.find title: "Update 2.1", @callback
+              "should exist in database": (posts)->
+                assert.lengthOf posts, 2
+                posts.forEach (post) ->
+                  assert.equal post.title, "Update 2.1"
+          
+          "with callback":
+            topic: ->
+              Post.update {title: "Update 3"}, {$set: {title: "Update 3.1"}}, {safe: true, multi: true}, @callback
+            "should pass the number of updated documents to the callback": (updated)->
+              assert.equal updated, 2
+            "updated document":
+              topic: ->
+                Post.find title: "Update 3.1", @callback
+              "should exist in database": (posts)->
+                assert.lengthOf posts, 2
+                posts.forEach (post) ->
+                  assert.equal post.title, "Update 3.1"
+        
+
+        "with convenience method":
+          topic: ->
+            posts = [
+              {title: "Update 4"}
+              {title: "Update 4"}
+              {title: "Update 5"}
+              {title: "Update 5"}
+            ]
+            Post.insert posts, {safe: true}, @callback
+
+          "no callback":
+            topic: (posts) ->
+              update = Post.update_all {title: "Update 4"}, {title: "Update 4.1"}
+              return update || "nothing"
+            "should return nothing": (update)->
+              assert.equal update, "nothing"
+            "updated document":
+              topic: ->
+                Post.find title: "Update 4.1", @callback
+              "should exist in database": (posts)->
+                assert.lengthOf posts, 2
+                posts.forEach (post) ->
+                  assert.equal post.title, "Update 4.1"
+          
+          "with callback":
+            topic: ->
+              Post.update_all {title: "Update 5"}, {$set: {title: "Update 5.1"}}, {safe: true}, @callback
+            "should pass the number of updated documents to the callback": (updated)->
+              assert.equal updated, 2
+            "updated document":
+              topic: ->
+                Post.find title: "Update 5.1", @callback
+              "should exist in database": (posts)->
+                assert.lengthOf posts, 2
+                posts.forEach (post) ->
+                  assert.equal post.title, "Update 5.1"
+    
+    "Model":
+      "single":
+        topic: ->
+          @posts = [
+            new Post(title: "Update 6")
+            new Post(title: "Update 6")
+          ]
+          Post.insert @posts, {safe: true}, @callback
+
+        "no callback":
+          topic: ->
+            update = Post.update @posts[0], {$set: {title: "Update 6.1"}}
+            return update || "nothing"
+          "should return nothing": (update)->
+            console.log @posts[0]
+            assert.equal update, "nothing"
+          "updated document":
+            topic: ->
+              Post.find title: "Update 6.1", @callback
+            "should exist in database": (posts)->
+              assert.equal posts[0].title, "Update 6.1"
+
+        "with callback":
+          topic: ->
+            Post.update @posts[1], {$set: {title: "Update 6.2"}}, {safe: true}, @callback
+          "should pass the number of updated documents to the callback": (updated)->
+            assert.equal updated, 1
+          "updated document":
+            topic: ->
+              Post.find title: "Update 6.2", @callback
+            "should exist in database": (posts)->
+              assert.equal posts[0].title, "Update 6.2"
+        
+
+  ###
   "Model.upsert":
     "shorthand":
       topic: ->
@@ -106,6 +181,7 @@ vows.describe("Model update").addBatch
           Post.find(title: "to be upserted, long form").one @callback
         "should exist in the database": (post)->
           assert.equal post.title, "to be upserted, long form"
+  ###
 
 
 .export(module)
