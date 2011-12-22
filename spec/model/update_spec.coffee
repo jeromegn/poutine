@@ -19,8 +19,8 @@ vows.describe("Model update").addBatch
       "single":
         topic: ->
           post = { title: "Post to update" }
-          Post.insert post, (err, post)=>
-            Post.update {title: post.title}, {$set: {title: "Post updated"}}, =>
+          Post.insert post, {safe: true}, (err, post)=>
+            Post.update {title: post.title}, {$set: {title: "Post updated"}}, {safe: true}, =>
               Post.find({title: "Post updated"}).one @callback
           return
         "should be updated in the database": (post)->
@@ -35,8 +35,8 @@ vows.describe("Model update").addBatch
               {title: "test post 2"}
               {title: "test post 3"}
             ]
-            Post.insert posts, (err, posts)=>
-              Post.update_all {$or: posts}, {$set: {title: "Multiple updated"}}, =>
+            Post.insert posts, {safe: true}, =>
+              Post.update_all {$or: posts}, {$set: {title: "Multiple updated"}}, {safe: true}, =>
                 Post.find {title: "Multiple updated"}, @callback
             return
           "should be updated in the database": (posts)->
@@ -48,8 +48,8 @@ vows.describe("Model update").addBatch
               {title: "test post 4"}
               {title: "test post 5"}
             ]
-            Post.insert posts, (err, posts)=>
-              Post.update {title: /test\spost\s(4|5)/}, {$set: {title: "Multiple updated 2"}}, {multi: true}, =>
+            Post.insert posts, {safe: true}, (err, posts)=>
+              Post.update {$or: posts}, {$set: {title: "Multiple updated 2"}}, {multi: true, safe: true}, =>
                 Post.find {title: "Multiple updated 2"}, @callback
             return
           "should be updated in the database": (posts)->
@@ -61,8 +61,8 @@ vows.describe("Model update").addBatch
       "single":
         topic: ->
           post = { title: "Post 2 to update" }
-          Post.insert post, (err, post)=>
-            Post.where({title: post.title}).update {$set: {title: "Post 2 updated"}}, =>
+          Post.insert post, {safe: true}, =>
+            Post.where(post).update {$set: {title: "Post 2 updated"}}, {safe: true}, =>
               Post.find({title: "Post 2 updated"}).all @callback
           return
         "should be updated in the database": (posts)->
@@ -75,8 +75,8 @@ vows.describe("Model update").addBatch
             { title: "Post 3 to update" }
             { title: "Post 4 to update" }
           ]
-          Post.insert posts, (err, posts)=>
-            Post.where($or: posts).update_all {$set: {title: "Dot notation multi updated"}}, =>
+          Post.insert posts, {safe: true}, =>
+            Post.where($or: posts).update_all {$set: {title: "Dot notation multi updated"}}, {safe: true}, =>
               Post.where({title: "Dot notation multi updated"}).all @callback
           return
         "should be updated in the database": (posts)->
@@ -87,20 +87,25 @@ vows.describe("Model update").addBatch
   "Model.upsert":
     "shorthand":
       topic: ->
-        post = { title: "to be upserted" }
-        Post.upsert post, post, =>
-          Post.find({title: "to be upserted"}).one @callback
-        return
-      "should exist in the database": (post)->
-        assert.equal post.title, "to be upserted"
+        post = { title: "to be upserted, short form" }
+        Post.upsert post, post, {safe: true}, @callback
+      
+      "when querying for it":
+        topic: ->
+          Post.find(title: "to be upserted, short form").one @callback
+        "should exist in the database": (post)->
+          assert.equal post.title, "to be upserted, short form"
+    
     "normal":
       topic: ->
-        post = { title: "to be upserted 2" }
-        Post.update post, post, {upsert: true}, =>
-          Post.find({title: "to be upserted 2"}).one @callback
-        return
-      "should exist in the database": (post)->
-        assert.equal post.title, "to be upserted 2"
+        post = { title: "to be upserted, long form" }
+        Post.update post, post, {upsert: true, safe: true}, @callback
+      
+      "when querying for it":
+        topic: ->
+          Post.find(title: "to be upserted, long form").one @callback
+        "should exist in the database": (post)->
+          assert.equal post.title, "to be upserted, long form"
 
 
 .export(module)

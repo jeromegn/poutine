@@ -244,7 +244,10 @@ class Collection
     @_connect (error, collection, database)=>
       return callback error if error
       database.end()
-      collection.update selector, document, options, callback
+      if callback
+        collection.update selector, document, options, callback
+      else
+        collection.update selector, document, options
   
   
   # -- Implementation details --
@@ -510,8 +513,10 @@ class Scope
     @collection.update @selector, object, options, callback
   
   # Updates all the documents matching the scope
-  update_all: (object, callback)->
-    @collection.update @selector, object, {multi: true}, callback
+  update_all: (object, options, callback)->
+    options ||= {}
+    options.multi = true
+    @collection.update @selector, object, options, callback
 
 
   # -- Cursors --

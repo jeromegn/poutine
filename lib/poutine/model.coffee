@@ -162,17 +162,23 @@ class Model
 
   # -- Insert/update/remove --
 
-  @insert: (document, callback)->
-    connect().collection(this).insert document, callback
+  @insert: (document, options, callback)->
+    connect().collection(this).insert document, options, callback
   
   @update: (selector, document, options, callback)->
     connect().collection(this).update selector, document, options, callback
   
-  @update_all: (selector, document, callback)->
-    connect().collection(this).update selector, document, {multi: true}, callback
+  @update_all: (selector, document, options, callback)->
+    if !callback && typeof options == "function"
+      [options, callback] = [{}, options]
+    options.multi = true
+    connect().collection(this).update selector, document, options, callback
   
-  @upsert: (selector, document, callback)->
-    connect().collection(this).update selector, document, {upsert: true}, callback
+  @upsert: (selector, document, options, callback)->
+    if !callback && typeof options == "function"
+      [options, callback] = [{}, options]
+    options.upsert = true
+    connect().collection(this).update selector, document, options, callback
 
 # Poutine uses these lifecycle methods to perform operations on models, but keeps them separate so we don't pollute the
 # Model prototype with methods that are never used directly by actual model classes.  Inheriting from a class that has
