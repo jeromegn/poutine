@@ -1,0 +1,242 @@
+html,
+body,
+div,
+span,
+applet,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+strong,
+sub,
+sup,
+tt,
+var,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  font-weight: inherit;
+  font-style: inherit;
+  font-family: inherit;
+  font-size: 100%;
+  vertical-align: baseline;
+}
+body {
+  line-height: 1;
+  color: #000;
+  background: #fff;
+}
+ol,
+ul {
+  list-style: none;
+}
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  vertical-align: middle;
+}
+caption,
+th,
+td {
+  text-align: left;
+  font-weight: normal;
+  vertical-align: middle;
+}
+a img {
+  border: none;
+}
+@font-face {
+  font-family: 'Droid Sans Mono';
+  src: url("../fonts/DroidSansMono-webfont.eot");
+  src: url("../fonts/DroidSansMono-webfont.eot?#iefix") format('embedded-opentype'), url("../fonts/DroidSansMono-webfont.woff") format('woff'), url("../fonts/DroidSansMono-webfont.ttf") format('truetype'), url("../fonts/DroidSansMono-webfont.svg#DroidSansMonoRegular") format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+html {
+  height: 100%;
+}
+body {
+  font-family: "Minion Pro", Times, "Times New Roman", serif;
+  font-size: 18px;
+}
+h1,
+h2,
+h3,
+h4,
+header,
+nav,
+#loader {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+code,
+pre {
+  font-family: "Droid Sans Mono", Monaco, monospace;
+  font-size: 14px;
+}
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 50px;
+  width: 100%;
+  background: rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(0,0,0,0.20);
+  -webkit-box-shadow: rgba(0,0,0,0.10) 0 1px 3px;
+  -moz-box-shadow: rgba(0,0,0,0.10) 0 1px 3px;
+  box-shadow: rgba(0,0,0,0.10) 0 1px 3px;
+  z-index: 2;
+}
+header img {
+  display: block;
+  margin-left: 30px;
+}
+header nav {
+  position: absolute;
+  right: 15px;
+  top: 0;
+  line-height: 50px;
+}
+header nav a {
+  display: block;
+  padding: 0 15px;
+  float: left;
+  color: #666;
+  font-weight: bold;
+  font-size: 15px;
+  text-decoration: none;
+}
+header nav a:hover {
+  color: #333;
+}
+#sections-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 162px;
+  padding: 0 30px;
+  height: 100%;
+  background: rgba(0,0,0,0.05);
+}
+#sections-nav #sections {
+  margin-top: 65px;
+}
+#sections-nav #sections a {
+  display: block;
+  font-weight: bold;
+  text-decoration: none;
+}
+#sections-nav #sections > li {
+  padding: 10px 0;
+}
+#sections-nav #sections > li > a {
+  padding: 5px 0;
+  color: #555;
+  font-size: 14px;
+}
+#sections-nav #sections ul li a {
+  padding: 4px 0;
+  font-size: 13px;
+  color: #ad6015;
+}
+#content {
+  padding: 30px;
+  margin: 51px 0 0 222px;
+  position: relative;
+  min-height: 100px;
+  max-width: 756px;
+}
+#content #loader {
+  color: #888;
+  width: 300px;
+  height: 24px;
+  line-height: 24px;
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  background: url("../images/pacman.gif") no-repeat center left;
+  padding-left: 32px;
+  font-size: 18px;
+}
+p,
+pre,
+blockquote,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin-bottom: 25px;
+}
+p {
+  line-height: 1.3em;
+}
+pre {
+  line-height: 1.2em;
+  overflow-y: auto;
+}
+h2,
+h2,
+h4,
+h5,
+h6 {
+  margin-top: 45px;
+  color: #666;
+}
+h1 {
+  font-size: 24px;
+}
+h2 {
+  font-size: 20px;
+}
+pre {
+  padding: 20px;
+  background: #f1f1f1;
+  -webkit-box-shadow: rgba(0,0,0,0.10) 0 1px 3px 0 inset;
+  -moz-box-shadow: rgba(0,0,0,0.10) 0 1px 3px 0 inset;
+  box-shadow: rgba(0,0,0,0.10) 0 1px 3px 0 inset;
+}
