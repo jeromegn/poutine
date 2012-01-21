@@ -7,6 +7,8 @@ render_navigation = ->
 
   $sections = $("#sections")
 
+  $sections.empty()
+
   $("h1, h2, h3, h4, h5, h6").each (el)->
     if el.tagName == "H2"
       current_subsection = 0
@@ -53,6 +55,7 @@ $.domReady ->
             localStorage.setItem("last_sha", readme_sha)
             
             $("#content").html content unless using_cache
+            render_navigation()
 
 decode64 = (input) ->
   output = ""

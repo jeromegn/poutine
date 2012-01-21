@@ -10,6 +10,7 @@
     current_section = 0;
     current_subsection = 0;
     $sections = $("#sections");
+    $sections.empty();
     return $("h1, h2, h3, h4, h5, h6").each(function(el) {
       var $subsection, section_id;
       if (el.tagName === "H2") {
@@ -57,7 +58,8 @@
               content = marked(decode64(resp.data.content));
               localStorage.setItem("cached", content);
               localStorage.setItem("last_sha", readme_sha);
-              if (!using_cache) return $("#content").html(content);
+              if (!using_cache) $("#content").html(content);
+              return render_navigation();
             }
           });
         }
