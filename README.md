@@ -5,28 +5,29 @@ work with than any driver, it will map your model objects to MongoDB documents, 
 your code beautiful.
 
 Check this out:
-
-    { Model } = require("poutine")
-
-
-    class User extends Model
-      @collection "users"
-
-      @field "name", String
-
-      @field "password", String
-      @set "password", (clear)->
-        @_.password = crypt(clear)
-
-      @field "email", String
-
-      @get "posts", ->
-        Post.where(author_id: @_id)
+    
+```coffee
+{ Model } = require("poutine")
 
 
-    user = new User(name: "Assaf")
-    name.save()
+class User extends Model
+  @collection "users"
 
+  @field "name", String
+
+  @field "password", String
+  @set "password", (clear)->
+    @_.password = crypt(clear)
+
+  @field "email", String
+
+  @get "posts", ->
+    Post.where(author_id: @_id)
+
+
+user = new User(name: "Assaf")
+name.save()
+```
 
 ## A Better Driver API
 
