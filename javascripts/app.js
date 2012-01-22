@@ -1,9 +1,11 @@
 (function() {
-  var bonzo, decode64, keyStr, qwery, render_navigation;
+  var bonzo, converter, decode64, keyStr, qwery, render_navigation;
 
   bonzo = require("bonzo");
 
   qwery = require("qwery");
+
+  converter = new Showdown.converter();
 
   render_navigation = function() {
     var $sections, current_section, current_subsection;
@@ -43,19 +45,19 @@
       url: "https://api.github.com/repos/jeromegn/poutine/git/trees/master?callback=?",
       type: "jsonp",
       success: function(resp) {
-        var last_sha, obj, readme_sha, _i, _len, _ref;
+        var obj, readme_sha, _i, _len, _ref;
         _ref = resp.data.tree;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           obj = _ref[_i];
           if (obj.path === "README.md") readme_sha = obj.sha;
         }
-        if (!(last_sha = localStorage.getItem("last_sha") && last_sha === readme_sha)) {
+        if (true) {
           return $.ajax({
             url: "https://api.github.com/repos/jeromegn/poutine/git/blobs/" + readme_sha + "?callback=?",
             type: "jsonp",
             success: function(resp) {
               var content;
-              content = marked(decode64(resp.data.content));
+              content = converter.makeHtml(decode64(resp.data.content));
               localStorage.setItem("cached", content);
               localStorage.setItem("last_sha", readme_sha);
               if (!using_cache) $("#content").html(content);

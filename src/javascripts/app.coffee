@@ -1,6 +1,8 @@
 bonzo = require("bonzo")
 qwery = require("qwery")
 
+converter = new Showdown.converter()
+
 render_navigation = ->
   current_section = 0
   current_subsection = 0
@@ -45,12 +47,13 @@ $.domReady ->
     type: "jsonp"
     success: (resp)->
       readme_sha = obj.sha for obj in resp.data.tree when obj.path == "README.md"
-      unless last_sha = localStorage.getItem("last_sha") && last_sha == readme_sha
+      #unless last_sha = localStorage.getItem("last_sha") && last_sha == readme_sha
+      if true
         $.ajax
           url: "https://api.github.com/repos/jeromegn/poutine/git/blobs/#{readme_sha}?callback=?"
           type: "jsonp"
           success: (resp)->
-            content = marked(decode64(resp.data.content))
+            content = converter.makeHtml(decode64(resp.data.content))
             localStorage.setItem("cached", content)
             localStorage.setItem("last_sha", readme_sha)
             
