@@ -1,5 +1,5 @@
 (function() {
-  var bonzo, decode64, highlight_code, keyStr, qwery, render_navigation;
+  var bonzo, decode64, highlight_code, keyStr, qwery, render_content, render_navigation;
 
   bonzo = require("bonzo");
 
@@ -37,13 +37,17 @@
     });
   };
 
+  render_content = function(html) {
+    $("#content").html(html);
+    render_navigation();
+    return highlight_code();
+  };
+
   $.domReady(function() {
     var cached, using_cache;
     using_cache = false;
     if (cached = localStorage.getItem("cached")) {
-      $("#content").html(cached);
-      render_navigation();
-      highlight_code();
+      render_content(cached);
       using_cache = true;
     }
     return $.ajax({
@@ -66,17 +70,14 @@
               content = marked(decode64(resp.data.content));
               localStorage.setItem("cached", content);
               localStorage.setItem("last_sha", readme_sha);
-              if (using_cache) {
-                refresh_link = $("<a id='refresh' href='#'>There's a new version of the documentation<br>Click here or refresh to see it.</a>");
-                $("body").append(refresh_link);
-                return refresh_link.bind("click", function(event) {
-                  event.preventDefault();
-                  if (!using_cache) $("#content").html(content);
-                  render_navigation();
-                  highlight_code();
-                  return refresh_link.remove();
-                });
-              }
+              if (!using_cache) return render_content(content);
+              refresh_link = $("<a id='refresh' href='#'>There's a new version of the documentation<br>Click here or refresh to see it.</a>");
+              $("body").append(refresh_link);
+              return refresh_link.bind("click", function(event) {
+                event.preventDefault();
+                render_content(content);
+                return refresh_link.remove();
+              });
             }
           });
         }

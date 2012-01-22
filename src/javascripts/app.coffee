@@ -36,13 +36,16 @@ highlight_code = ->
   $("pre code").each (el)->
     hljs.initHighlighting(el)
 
+render_content = (html)->
+  $("#content").html html
+  render_navigation()
+  highlight_code()
+
 $.domReady ->
   using_cache = false
   
   if cached = localStorage.getItem("cached")
-    $("#content").html(cached)
-    render_navigation()
-    highlight_code()
+    render_content(cached)
     using_cache = true
 
   $.ajax
@@ -61,15 +64,14 @@ $.domReady ->
             localStorage.setItem("cached", content)
             localStorage.setItem("last_sha", readme_sha)
             
-            if using_cache
-              refresh_link = $("<a id='refresh' href='#'>There's a new version of the documentation<br>Click here or refresh to see it.</a>")
-              $("body").append(refresh_link)
-              refresh_link.bind "click", (event)->
-                event.preventDefault()
-                $("#content").html content unless using_cache
-                render_navigation()
-                highlight_code()
-                refresh_link.remove()
+            return render_content(content) unless using_cache
+              
+            refresh_link = $("<a id='refresh' href='#'>There's a new version of the documentation<br>Click here or refresh to see it.</a>")
+            $("body").append(refresh_link)
+            refresh_link.bind "click", (event)->
+              event.preventDefault()
+              render_content(content)
+              refresh_link.remove()
 
 decode64 = (input) ->
   output = ""
