@@ -208,14 +208,19 @@ pre .tex .formula {
   font-weight: normal;
   font-style: normal;
 }
+@font-face {
+  font-family: 'Cubano';
+  src: url("../fonts/cubano-regular-webfont.eot");
+  src: url("../fonts/cubano-regular-webfont.woff") format('woff'), url("../fonts/cubano-regular-webfont.ttf") format('truetype'), url("../fonts/cubano-regular-webfont.svg#CubanoRegular") format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
 html {
   height: 100%;
 }
 body {
   font-family: "Minion Pro", Times, "Times New Roman", serif;
   font-size: 18px;
-  padding: 51px 0 0 222px;
-  overflow: hidden;
 }
 h1,
 h2,
@@ -236,37 +241,19 @@ header {
   top: 0;
   left: 0;
   height: 50px;
-  width: 100%;
+  width: 222px;
   background: rgba(0,0,0,0.05);
-  border-bottom: 1px solid rgba(0,0,0,0.20);
-  -webkit-box-shadow: rgba(0,0,0,0.10) 0 1px 3px;
-  -moz-box-shadow: rgba(0,0,0,0.10) 0 1px 3px;
-  box-shadow: rgba(0,0,0,0.10) 0 1px 3px;
   z-index: 2;
 }
-header img {
-  display: block;
-  margin-left: 30px;
-}
-header nav {
-  position: absolute;
-  right: 15px;
-  top: 0;
+header #logo {
+  color: #333;
+  font-family: "Cubano";
+  font-size: 24px;
+  padding: 0 30px;
   line-height: 50px;
-}
-header nav a {
-  display: block;
-  padding: 0 15px;
-  float: left;
-  color: #666;
-  font-weight: bold;
-  font-size: 15px;
   text-decoration: none;
 }
-header nav a:hover {
-  color: #333;
-}
-#sections-nav {
+#nav {
   position: fixed;
   top: 0;
   left: 0;
@@ -274,37 +261,49 @@ header nav a:hover {
   padding: 0 30px;
   height: 100%;
   background: rgba(0,0,0,0.05);
+  border-right: 1px solid rgba(0,0,0,0.20);
+  -webkit-box-shadow: rgba(0,0,0,0.10) -1px 0 3px 0 inset;
+  -moz-box-shadow: rgba(0,0,0,0.10) -1px 0 3px 0 inset;
+  box-shadow: rgba(0,0,0,0.10) -1px 0 3px 0 inset;
+  text-shadow: rgba(255,255,255,0.70) 0 1px 0;
 }
-#sections-nav #sections {
-  margin-top: 65px;
-}
-#sections-nav #sections a {
+#nav a {
   display: block;
   font-weight: bold;
   text-decoration: none;
 }
-#sections-nav #sections > li {
+#nav #sections {
+  margin-top: 65px;
+  margin-bottom: 15px;
+}
+#nav #sections > li {
   padding: 10px 0;
 }
-#sections-nav #sections > li > a {
+#nav #sections > li > a {
   padding: 5px 0;
   color: #555;
   font-size: 14px;
 }
-#sections-nav #sections ul li a {
+#nav #sections ul li a {
   padding: 4px 0;
   font-size: 13px;
-  color: #ad6015;
 }
-#content-wrap {
-  height: 100%;
-  overflow: auto;
+#nav .extra {
+  margin-bottom: 15px;
+}
+#nav .extra a {
+  color: #555;
+  font-size: 14px;
+}
+#nav #travis img {
+  margin-top: 10px;
+  display: block;
 }
 #content {
-  padding: 30px;
+  margin: 30px 30px 30px 252px;
   position: relative;
   min-height: 100px;
-  max-width: 756px;
+  max-width: 696px;
 }
 #content #loader {
   color: #888;
