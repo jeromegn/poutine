@@ -1,11 +1,9 @@
 (function() {
-  var bonzo, converter, decode64, keyStr, qwery, render_navigation;
+  var bonzo, decode64, highlight_code, keyStr, qwery, render_navigation;
 
   bonzo = require("bonzo");
 
   qwery = require("qwery");
-
-  converter = new Showdown.converter();
 
   render_navigation = function() {
     var $sections, current_section, current_subsection;
@@ -33,35 +31,52 @@
     });
   };
 
+  highlight_code = function() {
+    return $("pre code").each(function(el) {
+      return hljs.initHighlighting(el);
+    });
+  };
+
   $.domReady(function() {
     var cached, using_cache;
     using_cache = false;
     if (cached = localStorage.getItem("cached")) {
       $("#content").html(cached);
       render_navigation();
+      highlight_code();
       using_cache = true;
     }
     return $.ajax({
       url: "https://api.github.com/repos/jeromegn/poutine/git/trees/master?callback=?",
       type: "jsonp",
       success: function(resp) {
-        var obj, readme_sha, _i, _len, _ref;
+        var last_sha, obj, readme_sha, _i, _len, _ref;
         _ref = resp.data.tree;
         for (_i = 0, _len = _ref.length; _i < _len; _i++) {
           obj = _ref[_i];
           if (obj.path === "README.md") readme_sha = obj.sha;
         }
-        if (true) {
+        last_sha = localStorage.getItem("last_sha");
+        if (readme_sha !== last_sha) {
           return $.ajax({
             url: "https://api.github.com/repos/jeromegn/poutine/git/blobs/" + readme_sha + "?callback=?",
             type: "jsonp",
             success: function(resp) {
-              var content;
-              content = converter.makeHtml(decode64(resp.data.content));
+              var content, refresh_link;
+              content = marked(decode64(resp.data.content));
               localStorage.setItem("cached", content);
               localStorage.setItem("last_sha", readme_sha);
-              if (!using_cache) $("#content").html(content);
-              return render_navigation();
+              if (using_cache) {
+                refresh_link = $("<a id='refresh' href='#'>There's a new version of the documentation<br>Click here or refresh to see it.</a>");
+                $("body").append(refresh_link);
+                return refresh_link.bind("click", function(event) {
+                  event.preventDefault();
+                  if (!using_cache) $("#content").html(content);
+                  render_navigation();
+                  highlight_code();
+                  return refresh_link.remove();
+                });
+              }
             }
           });
         }

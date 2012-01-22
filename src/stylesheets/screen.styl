@@ -18,6 +18,8 @@ html {
 body {
   font-family: "Minion Pro", Times, "Times New Roman", serif;
   font-size: 18px;
+  padding: 51px 0 0 222px;
+  overflow: hidden;
 }
 
 h1, h2, h3, h4, header, nav, #loader {
@@ -98,9 +100,14 @@ header {
   }
 }
 
+#content-wrap {
+  height: 100%;
+  overflow: auto;
+}
+
 #content {
   padding: 30px;
-  margin: 51px 0 0 222px;
+  //margin: 51px 0 0 222px;
   position: relative;
   min-height: 100px;
   max-width: 756px;
@@ -118,6 +125,27 @@ header {
   }
 }
 
+#refresh {
+  z-index: 3;
+  position: fixed;
+  display: block;
+  top: 0;
+  left: 50%;
+  width: 320px;
+  margin-left: -160px;
+  font-family: "Helvetica Neue", "Helvetica", arial, sans-serif;
+  line-height: 1.4em;
+  padding: 10px;
+  color: #fff;
+  text-shadow: rgba(black, 0.3) 0 1px 1px;
+  font-weight: bold;
+  font-size: 13px;
+  text-decoration: none;
+  text-align: center;
+  background: #666;
+  border-radius: bottom 5px;
+}
+
 p, pre, blockquote, h1, h2, h3, h4, h5, h6 {
   margin-bottom: 25px;
 }
@@ -128,10 +156,9 @@ p {
 
 pre {
   line-height: 1.2em;
-  overflow-y: auto;
 }
 
-h2, h2, h4, h5, h6 {
+h2, h3, h4, h5, h6 {
   margin-top: 45px;
   color: #666;
 }
@@ -144,8 +171,7 @@ h2 {
   font-size: 20px;
 }
 
-pre {
-  padding: 20px;
-  background: #f1f1f1;
-  box-shadow: rgba(black, 0.1) 0 1px 3px 0 inset;
+h3 {
+  font-size: 16px;
+  font-weight: bold;
 }

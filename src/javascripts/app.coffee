@@ -1,8 +1,6 @@
 bonzo = require("bonzo")
 qwery = require("qwery")
 
-converter = new Showdown.converter()
-
 render_navigation = ->
   current_section = 0
   current_subsection = 0
@@ -34,12 +32,17 @@ render_navigation = ->
         </li>
       """
 
+highlight_code = ->
+  $("pre code").each (el)->
+    hljs.initHighlighting(el)
+
 $.domReady ->
   using_cache = false
   
   if cached = localStorage.getItem("cached")
     $("#content").html(cached)
     render_navigation()
+    highlight_code()
     using_cache = true
 
   $.ajax
@@ -47,18 +50,26 @@ $.domReady ->
     type: "jsonp"
     success: (resp)->
       readme_sha = obj.sha for obj in resp.data.tree when obj.path == "README.md"
-      #unless last_sha = localStorage.getItem("last_sha") && last_sha == readme_sha
-      if true
+      last_sha = localStorage.getItem("last_sha")
+      
+      if readme_sha != last_sha
         $.ajax
           url: "https://api.github.com/repos/jeromegn/poutine/git/blobs/#{readme_sha}?callback=?"
           type: "jsonp"
           success: (resp)->
-            content = converter.makeHtml(decode64(resp.data.content))
+            content = marked(decode64(resp.data.content))
             localStorage.setItem("cached", content)
             localStorage.setItem("last_sha", readme_sha)
             
-            $("#content").html content unless using_cache
-            render_navigation()
+            if using_cache
+              refresh_link = $("<a id='refresh' href='#'>There's a new version of the documentation<br>Click here or refresh to see it.</a>")
+              $("body").append(refresh_link)
+              refresh_link.bind "click", (event)->
+                event.preventDefault()
+                $("#content").html content unless using_cache
+                render_navigation()
+                highlight_code()
+                refresh_link.remove()
 
 decode64 = (input) ->
   output = ""

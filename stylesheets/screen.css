@@ -94,6 +94,12 @@ pre code {
   padding: 0.5em;
   color: #000;
   background: #f8f8ff;
+  padding: 20px;
+  -webkit-box-shadow: rgba(0,0,0,0.10) 0 1px 3px 0 inset;
+  -moz-box-shadow: rgba(0,0,0,0.10) 0 1px 3px 0 inset;
+  box-shadow: rgba(0,0,0,0.10) 0 1px 3px 0 inset;
+  border: 1px solid #ccc;
+  overflow-y: auto;
 }
 pre .comment,
 pre .template_comment,
@@ -208,6 +214,8 @@ html {
 body {
   font-family: "Minion Pro", Times, "Times New Roman", serif;
   font-size: 18px;
+  padding: 51px 0 0 222px;
+  overflow: hidden;
 }
 h1,
 h2,
@@ -288,9 +296,12 @@ header nav a:hover {
   font-size: 13px;
   color: #ad6015;
 }
+#content-wrap {
+  height: 100%;
+  overflow: auto;
+}
 #content {
   padding: 30px;
-  margin: 51px 0 0 222px;
   position: relative;
   min-height: 100px;
   max-width: 756px;
@@ -306,6 +317,31 @@ header nav a:hover {
   background: url("../images/pacman.gif") no-repeat center left;
   padding-left: 32px;
   font-size: 18px;
+}
+#refresh {
+  z-index: 3;
+  position: fixed;
+  display: block;
+  top: 0;
+  left: 50%;
+  width: 320px;
+  margin-left: -160px;
+  font-family: "Helvetica Neue", "Helvetica", arial, sans-serif;
+  line-height: 1.4em;
+  padding: 10px;
+  color: #fff;
+  text-shadow: rgba(0,0,0,0.30) 0 1px 1px;
+  font-weight: bold;
+  font-size: 13px;
+  text-decoration: none;
+  text-align: center;
+  background: #666;
+  -moz-border-radius-bottomleft: 5px;
+  -webkit-border-bottom-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+  -moz-border-radius-bottomright: 5px;
+  -webkit-border-bottom-right-radius: 5px;
+  border-bottom-right-radius: 5px;
 }
 p,
 pre,
@@ -323,10 +359,9 @@ p {
 }
 pre {
   line-height: 1.2em;
-  overflow-y: auto;
 }
 h2,
-h2,
+h3,
 h4,
 h5,
 h6 {
@@ -339,10 +374,7 @@ h1 {
 h2 {
   font-size: 20px;
 }
-pre {
-  padding: 20px;
-  background: #f1f1f1;
-  -webkit-box-shadow: rgba(0,0,0,0.10) 0 1px 3px 0 inset;
-  -moz-box-shadow: rgba(0,0,0,0.10) 0 1px 3px 0 inset;
-  box-shadow: rgba(0,0,0,0.10) 0 1px 3px 0 inset;
+h3 {
+  font-size: 16px;
+  font-weight: bold;
 }
