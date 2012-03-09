@@ -24,7 +24,7 @@ class Configuration
       destroy:  (connection)->
         connection.close()
       max:      options.pool || 50
-      idleTimeoutMillis: 30000
+      idleTimeoutMillis: 600000
 
   # Acquire new connection.
   acquire: (callback)->

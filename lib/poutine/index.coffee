@@ -1,5 +1,5 @@
-{ Model } = require("./model")
 { connect, configure } = require("./connect")
+{ Model } = require("./model")
 
 exports.connect   = connect
 exports.configure = configure
