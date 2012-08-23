@@ -15,12 +15,12 @@ catch ex
 # driver, specifically it's Db object.
 class Configuration
   constructor: (name, options = {})->
+    server = new Server(options.host || "127.0.0.1", options.port || 27017)
+    @_client = new Db(name, server, options)
     @_pool = new Pool
       name:     name
       create:   (callback)=>
-        server = new Server(options.host || "127.0.0.1", options.port || 27017)
-        client = new Db(name, server, options)
-        client.open callback
+        @_client.open callback
       destroy:  (connection)->
         connection.close()
       max:      options.pool || 50
@@ -43,6 +43,7 @@ class Configuration
 class Database extends EventEmitter
   constructor: (@_configuration)->
     @_collections = []
+    @db = @_configuration._client
     @ObjectID = require("mongodb").BSONPure.ObjectID
     # Tracks how many times we called begin, only release TCP connection
     # when zero.
@@ -51,6 +52,7 @@ class Database extends EventEmitter
       weak this, ->
         if @_connecting
           @_configuration.release @_connection
+    return this
 
   # Use this if you need access to the MongoDB driver's connection object.  It
   # passes, error, a connection and a reference to the end method.  Don't forget
